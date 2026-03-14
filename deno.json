@@ -1,0 +1,13 @@
+{
+	"unstable": ["kv", "fmt-component"],
+	"tasks": {
+		"dev": "deno task check && vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+	},
+	"imports": {
+		"$lib/": "./src/lib/",
+		"$components/": "./src/components/"
+	}
+}

@@ -1,0 +1,168 @@
+<script lang="ts">
+	import { fade } from 'svelte/transition'
+	import { backdropUrl, posterUrl, profileUrl } from '$lib/utils/image'
+	import { fetchPersonExternalIds } from '$lib/api/tmdb'
+	import RatingBadge from '$components/movie/RatingBadge.svelte'
+	import MovieMeta from '$components/movie/MovieMeta.svelte'
+	import MovieGrid from '$components/movie/MovieGrid.svelte'
+	import WatchlistButton from '$components/watchlist/WatchlistButton.svelte'
+	import TrailerButton from '$components/movie/TrailerButton.svelte'
+	import TrailerModal from '$components/modals/TrailerModal.svelte'
+	import type { MovieDetail } from '$lib/types/app'
+	import type { TMDBCastMember, TMDBMedia } from '$lib/types/tmdb'
+
+	interface Props {
+		movie: MovieDetail
+		related?: TMDBMedia[]
+	}
+
+	let { movie, related = [] }: Props = $props()
+	let showTrailer = $state(false)
+
+	const director = $derived(movie.credits.crew.find(c => c.job === 'Director'))
+	const topCast = $derived(movie.credits.cast.slice(0, 12))
+	const relatedItems = $derived(related.filter(m => m.id !== movie.id).slice(0, 12))
+
+	const personImdbCache = new Map<number, string | null>()
+
+	async function openPersonOnImdb(member: TMDBCastMember) {
+		if (typeof window === 'undefined') return
+
+		// Open the tab synchronously to avoid popup blockers.
+		const opened = window.open('about:blank', '_blank')
+		if (!opened) return
+		opened.opener = null
+
+		let imdbId: string | null
+		if (personImdbCache.has(member.id)) {
+			imdbId = personImdbCache.get(member.id) ?? null
+		} else {
+			try {
+				const externalIds = await fetchPersonExternalIds(member.id)
+				imdbId = externalIds.imdb_id ?? null
+				personImdbCache.set(member.id, imdbId)
+			} catch {
+				imdbId = null
+				personImdbCache.set(member.id, null)
+			}
+		}
+
+		const url = imdbId
+			? `https://www.imdb.com/name/${imdbId}/`
+			: `https://www.imdb.com/find/?q=${encodeURIComponent(member.name)}&s=nm`
+
+		opened.location.href = url
+	}
+</script>
+
+{#if showTrailer && movie.trailer}
+	<TrailerModal trailer={movie.trailer} onclose={() => (showTrailer = false)} />
+{/if}
+
+<article in:fade={{ duration: 250 }}>
+	<!-- Backdrop Hero -->
+	<div class="relative h-[40vh] sm:h-[40vh] overflow-hidden" style="background: var(--color-surface-800)">
+		{#if movie.backdrop_path}
+			<img src={backdropUrl(movie.backdrop_path)} alt="" class="w-full h-full object-cover object-top opacity-60" />
+		{/if}
+		<div class="absolute inset-0" style="background: linear-gradient(to top, var(--color-surface-950) 0%, color-mix(in srgb, var(--color-surface-950) 40%, transparent) 50%, transparent 100%)"></div>
+	</div>
+
+	<!-- Content -->
+	<div class="max-w-5xl mx-auto px-4 -mt-32 relative z-10 pb-16">
+		<div class="flex flex-col sm:flex-row gap-8">
+			<!-- Poster -->
+			<div class="flex-shrink-0 mx-auto sm:mx-0">
+				<img
+					src={posterUrl(movie.poster_path, 'w500')}
+					alt={movie.title}
+					class="w-44 sm:w-56 rounded-2xl shadow-2xl"
+					style="outline: 1px solid color-mix(in srgb, var(--color-surface-700) 50%, transparent)"
+				/>
+			</div>
+
+			<!-- Info -->
+			<div class="flex-1 flex flex-col gap-4 pt-2 sm:pt-8">
+				<div>
+					<h1 class="text-3xl sm:text-4xl font-bold leading-tight" style="color: var(--color-ink-50)">{movie.title}</h1>
+					{#if movie.tagline}
+						<p class="italic mt-1" style="color: var(--color-ink-500)">{movie.tagline}</p>
+					{/if}
+				</div>
+
+				<MovieMeta {movie} />
+
+				<!-- Ratings Row -->
+				<div class="flex flex-wrap gap-3">
+					{#if movie.ratings.tmdb}
+						<RatingBadge label="TMDB" value={movie.ratings.tmdb.toFixed(1)} icon="⭐" />
+					{/if}
+					{#if movie.ratings.rottenTomatoes}
+						<RatingBadge label="Tomatometer" value={movie.ratings.rottenTomatoes} icon="🍅" />
+					{/if}
+					{#if movie.ratings.metacritic}
+						<RatingBadge label="Metacritic" value={movie.ratings.metacritic} icon="🎯" />
+					{/if}
+				</div>
+
+				<!-- Actions -->
+				<div class="flex items-center gap-3 flex-wrap">
+					<WatchlistButton media={movie} size="lg" showLabel />
+					{#if movie.trailer}
+						<TrailerButton trailer={movie.trailer} onclick={() => (showTrailer = true)} />
+					{/if}
+				</div>
+
+				{#if director}
+					<p class="text-sm" style="color: var(--color-ink-500)">Directed by <span class="font-medium" style="color: var(--color-ink-300)">{director.name}</span></p>
+				{/if}
+			</div>
+		</div>
+
+		<!-- Overview -->
+		{#if movie.overview}
+			<div class="mt-10">
+				<h2 class="text-lg font-semibold mb-3" style="color: var(--color-ink-100)">Overview</h2>
+				<p class="leading-relaxed" style="color: var(--color-ink-300)">{movie.overview}</p>
+			</div>
+		{/if}
+
+		<!-- Cast -->
+		{#if topCast.length > 0}
+			<div class="mt-10">
+				<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Cast</h2>
+				<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+					{#each topCast as member, i (member.id + '-' + i)}
+						<button
+							type="button"
+							class="flex flex-col items-center text-center gap-2 bg-transparent border-0 p-0 appearance-none"
+							aria-label={`Open ${member.name} on IMDb`}
+							onclick={() => openPersonOnImdb(member)}
+						>
+							<div class="size-16 sm:size-20 rounded-full overflow-hidden flex-shrink-0" style="background: var(--color-surface-700)">
+								<img
+									src={profileUrl(member.profile_path)}
+									alt={member.name}
+									class="w-full h-full object-cover"
+									loading="lazy"
+								/>
+							</div>
+							<div>
+								<p class="text-xs font-semibold leading-tight" style="color: var(--color-ink-100)">{member.name}</p>
+								<p class="text-[11px] leading-tight mt-0.5 line-clamp-2" style="color: var(--color-ink-500)">{member.character}</p>
+							</div>
+						</button>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
+		<!-- Related -->
+		{#if relatedItems.length > 0}
+			<div class="mt-10">
+				<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Related</h2>
+				<MovieGrid movies={relatedItems} />
+			</div>
+		{/if}
+	</div>
+</article>
