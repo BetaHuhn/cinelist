@@ -8,7 +8,10 @@ import type {
 	TMDBMediaResult,
 	TMDBPagedResponse,
 	TMDBTV,
-	TMDBPersonExternalIdsResponse
+	TMDBPersonExternalIdsResponse,
+	TMDBMovieKeywordsResponse,
+	TMDBTVKeywordsResponse,
+	TMDBKeyword
 } from '$lib/types/tmdb'
 
 const BASE = 'https://api.themoviedb.org/3'
@@ -115,6 +118,16 @@ export async function fetchTVRecommendations(
 	return data.results
 }
 
+export async function fetchMovieKeywords(id: number, fetchFn?: typeof fetch): Promise<TMDBKeyword[]> {
+	const data = await tmdbFetch<TMDBMovieKeywordsResponse>(`/movie/${id}/keywords`, {}, fetchFn)
+	return Array.isArray(data.keywords) ? data.keywords : []
+}
+
+export async function fetchTVKeywords(id: number, fetchFn?: typeof fetch): Promise<TMDBKeyword[]> {
+	const data = await tmdbFetch<TMDBTVKeywordsResponse>(`/tv/${id}/keywords`, {}, fetchFn)
+	return Array.isArray(data.results) ? data.results : []
+}
+
 export type TMDBSortBy =
 	| 'popularity.desc'
 	| 'popularity.asc'
@@ -129,6 +142,7 @@ export type TMDBSortBy =
 
 export interface TMDBDiscoverParams {
 	with_genres?: string
+	with_keywords?: string
 	sort_by?: TMDBSortBy
 	page?: number
 	include_adult?: boolean
@@ -141,6 +155,7 @@ function toDiscoverQuery(params: TMDBDiscoverParams): Record<string, string> {
 		include_adult: String(params.include_adult ?? false)
 	}
 	if (params.with_genres) query.with_genres = params.with_genres
+	if (params.with_keywords) query.with_keywords = params.with_keywords
 	if (params.sort_by) query.sort_by = params.sort_by
 	if (params.page) query.page = String(params.page)
 	if (params['vote_count.gte'] != null) query['vote_count.gte'] = String(params['vote_count.gte'])

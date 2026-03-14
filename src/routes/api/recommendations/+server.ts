@@ -1,11 +1,14 @@
 import { json } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
+import { dev } from '$app/environment'
 import { getWatchlist } from '$lib/kv/watchlist'
 import {
 	discoverMovies,
 	discoverTV,
 	fetchMovieRecommendations,
-	fetchTVRecommendations
+	fetchTVRecommendations,
+	fetchMovieKeywords,
+	fetchTVKeywords
 } from '$lib/api/tmdb'
 import type { TMDBMediaResult } from '$lib/types/tmdb'
 import {
@@ -20,6 +23,10 @@ const SEED_WINDOW = 80
 const SEEDS_PER_TYPE = 3
 const REC_PER_SEED = 20
 const REC_CONCURRENCY = 4
+
+const KEYWORDS_PER_TYPE = 10
+const KEYWORD_QUERIES_PER_TYPE = 2
+const KEYWORD_CONCURRENCY = 4
 
 function parseLimit(url: URL): number {
 	const raw = url.searchParams.get('limit')
@@ -121,10 +128,14 @@ function prefOverlap(genres: number[] | undefined, pref: Set<number>): number {
 
 export const GET: RequestHandler = async ({ url, fetch }) => {
 	const limit = parseLimit(url)
+	const debug = dev && url.searchParams.get('debug') === '1'
 
-	const cached = await getHomeRecommendationsCache()
-	if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
-		return json(cached.items.slice(0, limit))
+	// Debug responses should reflect the current watchlist/seed selection; don't serve stale cached payloads.
+	if (!debug) {
+		const cached = await getHomeRecommendationsCache()
+		if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
+			return json(cached.items.slice(0, limit))
+		}
 	}
 
 	const watchlist = await getWatchlist()
@@ -139,11 +150,31 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 	const tvGenres = topGenres(tvItems.slice(0, 200), 3)
 	const moviePref = new Set(movieGenres)
 	const tvPref = new Set(tvGenres)
+	const movieGenreOr = movieGenres.length ? movieGenres.join('|') : undefined
+	const tvGenreOr = tvGenres.length ? tvGenres.join('|') : undefined
 
 	// If there are no genre IDs (e.g. imported items missing metadata), fall back to trending-like popularity.
 	// We still run discover without with_genres to get a reasonable list.
 	const movieGenreQueries = movieGenres.length ? movieGenres : [0]
 	const tvGenreQueries = tvGenres.length ? tvGenres : [0]
+
+	type SeedDebug = { mediaType: 'movie' | 'tv'; id: number; title: string; seedIndex: number }
+
+	type CandidateDebug = {
+		seedSources: Map<string, { mediaType: 'movie' | 'tv'; id: number; title: string; bestPos: number; seedIndex: number }>
+		keywordSources: Set<number>
+		discoverSources: Array<{ kind: 'genre' | 'keyword'; id?: number; idx: number }>
+		components?: {
+			freq: number
+			bestRecRank: number
+			bestGenreOverlap: number
+			bestDiscoverRank: number
+			voteCount: number
+			voteAvg: number
+			popularity: number
+			score: number
+		}
+	}
 
 	type CandidateStats = {
 		item: TMDBMediaResult
@@ -151,8 +182,11 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 		bestRecRank: number
 		bestGenreOverlap: number
 		bestDiscoverRank: number
+		debug?: CandidateDebug
 	}
 	const candidates = new Map<string, CandidateStats>()
+	const keywordNameById = debug ? new Map<number, string>() : null
+	const seedDebugList: SeedDebug[] = []
 
 	function upsert(mediaType: 'movie' | 'tv', raw: any): CandidateStats | null {
 		const id = typeof raw?.id === 'number' ? raw.id : Number(raw?.id)
@@ -171,13 +205,22 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 			seedHitCount: 0,
 			bestRecRank: 0,
 			bestGenreOverlap: 0,
-			bestDiscoverRank: 0
+			bestDiscoverRank: 0,
+			...(debug
+				? {
+					debug: {
+						seedSources: new Map(),
+						keywordSources: new Set(),
+						discoverSources: []
+					}
+				}
+				: {})
 		}
 		candidates.set(k, created)
 		return created
 	}
 
-	function considerDiscover(mediaType: 'movie' | 'tv', raw: any, queryIndex: number, position: number) {
+	function considerDiscoverGenre(mediaType: 'movie' | 'tv', raw: any, queryIndex: number, position: number) {
 		const stats = upsert(mediaType, raw)
 		if (!stats) return
 		const genreWeight = 1 - queryIndex * 0.15 // 1.0, 0.85, 0.7
@@ -185,11 +228,34 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 		stats.bestDiscoverRank = Math.max(stats.bestDiscoverRank, genreWeight * rankWeight)
 		const pref = mediaType === 'movie' ? moviePref : tvPref
 		stats.bestGenreOverlap = Math.max(stats.bestGenreOverlap, prefOverlap(stats.item.genre_ids, pref))
+		if (debug && stats.debug) stats.debug.discoverSources.push({ kind: 'genre', idx: queryIndex })
+	}
+
+	function considerDiscoverKeyword(
+		mediaType: 'movie' | 'tv',
+		raw: any,
+		keywordId: number,
+		queryIndex: number,
+		position: number
+	) {
+		const stats = upsert(mediaType, raw)
+		if (!stats) return
+		const genreWeight = 1 - queryIndex * 0.15
+		const rankWeight = 1 / (position + 1)
+		stats.bestDiscoverRank = Math.max(stats.bestDiscoverRank, genreWeight * rankWeight)
+		const pref = mediaType === 'movie' ? moviePref : tvPref
+		stats.bestGenreOverlap = Math.max(stats.bestGenreOverlap, prefOverlap(stats.item.genre_ids, pref))
+		if (debug && stats.debug) {
+			stats.debug.keywordSources.add(keywordId)
+			stats.debug.discoverSources.push({ kind: 'keyword', id: keywordId, idx: queryIndex })
+		}
 	}
 
 	function considerSeedRec(
 		seedMediaType: 'movie' | 'tv',
 		seedGenres: number[],
+		seedId: number,
+		seedTitle: string,
 		raw: any,
 		seedIndex: number,
 		position: number,
@@ -209,6 +275,20 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 		const pref = seedMediaType === 'movie' ? moviePref : tvPref
 		const overlap = 0.7 * jaccard(stats.item.genre_ids, seedGenres) + 0.3 * prefOverlap(stats.item.genre_ids, pref)
 		stats.bestGenreOverlap = Math.max(stats.bestGenreOverlap, overlap)
+
+		if (debug && stats.debug) {
+			const seedKey = `${seedMediaType}:${seedId}`
+			const existing = stats.debug.seedSources.get(seedKey)
+			if (!existing || position < existing.bestPos) {
+				stats.debug.seedSources.set(seedKey, {
+					mediaType: seedMediaType,
+					id: seedId,
+					title: seedTitle,
+					bestPos: position,
+					seedIndex
+				})
+			}
+		}
 	}
 
 	const moviePromises = movieGenreQueries.map((g, idx) =>
@@ -243,7 +323,7 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 		const { mediaType, idx, results } = r.value
 		for (let i = 0; i < results.length; i++) {
 			const raw = results[i]
-			considerDiscover(mediaType, raw, idx, i)
+			considerDiscoverGenre(mediaType, raw, idx, i)
 		}
 	}
 
@@ -259,6 +339,91 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 		...seedMovies.map((s, idx) => ({ mediaType: 'movie' as const, seed: s, seedIndex: idx })),
 		...seedTV.map((s, idx) => ({ mediaType: 'tv' as const, seed: s, seedIndex: idx }))
 	]
+	if (debug) {
+		for (const job of seedJobs) {
+			seedDebugList.push({
+				mediaType: job.mediaType,
+				id: job.seed.id,
+				title: job.seed.title,
+				seedIndex: job.seedIndex
+			})
+		}
+	}
+
+	// Keyword-based personalization: fetch keywords for seed items and use them as additional discover queries.
+	const keywordSettled = await mapLimit(seedJobs, KEYWORD_CONCURRENCY, async job => {
+		return job.mediaType === 'movie'
+			? fetchMovieKeywords(job.seed.id, fetch)
+			: fetchTVKeywords(job.seed.id, fetch)
+	})
+
+	const movieKeywordScores = new Map<number, number>()
+	const tvKeywordScores = new Map<number, number>()
+	for (let i = 0; i < keywordSettled.length; i++) {
+		const r = keywordSettled[i]
+		if (r.status !== 'fulfilled') continue
+		const job = seedJobs[i]
+		const weight = 1 - job.seedIndex * 0.2
+		const target = job.mediaType === 'movie' ? movieKeywordScores : tvKeywordScores
+		for (const kw of r.value) {
+			if (!kw || typeof kw.id !== 'number') continue
+			if (debug && keywordNameById) keywordNameById.set(kw.id, typeof kw.name === 'string' ? kw.name : String(kw.id))
+			target.set(kw.id, (target.get(kw.id) ?? 0) + weight)
+		}
+	}
+
+	const topMovieKeywordIds = Array.from(movieKeywordScores.entries())
+		.sort((a, b) => b[1] - a[1])
+		.slice(0, KEYWORDS_PER_TYPE)
+		.map(([id]) => id)
+	const topTVKeywordIds = Array.from(tvKeywordScores.entries())
+		.sort((a, b) => b[1] - a[1])
+		.slice(0, KEYWORDS_PER_TYPE)
+		.map(([id]) => id)
+
+	const movieKeywordQueries = topMovieKeywordIds.slice(0, KEYWORD_QUERIES_PER_TYPE)
+	const tvKeywordQueries = topTVKeywordIds.slice(0, KEYWORD_QUERIES_PER_TYPE)
+
+	const keywordMoviePromises = movieKeywordQueries.map((kw, idx) =>
+		discoverMovies(
+			{
+				with_keywords: String(kw),
+				with_genres: movieGenreOr,
+				sort_by: 'vote_average.desc',
+				page: 1,
+				include_adult: false,
+				'vote_count.gte': 25
+			},
+			fetch
+		).then(results => ({ mediaType: 'movie' as const, idx, results }))
+	)
+
+	const keywordTVPromises = tvKeywordQueries.map((kw, idx) =>
+		discoverTV(
+			{
+				with_keywords: String(kw),
+				with_genres: tvGenreOr,
+				sort_by: 'vote_average.desc',
+				page: 1,
+				include_adult: false,
+				'vote_count.gte': 25
+			},
+			fetch
+		).then(results => ({ mediaType: 'tv' as const, idx, results }))
+	)
+
+	const keywordDiscoverSettled = await Promise.allSettled([
+		...keywordMoviePromises,
+		...keywordTVPromises
+	])
+	for (const r of keywordDiscoverSettled) {
+		if (r.status !== 'fulfilled') continue
+		const { mediaType, idx, results } = r.value
+		const keywordId = mediaType === 'movie' ? movieKeywordQueries[idx] : tvKeywordQueries[idx]
+		for (let pos = 0; pos < results.length; pos++) {
+			considerDiscoverKeyword(mediaType, results[pos], keywordId, idx, pos)
+		}
+	}
 
 	const seedSettled = await mapLimit(seedJobs, REC_CONCURRENCY, async job => {
 		return job.mediaType === 'movie'
@@ -273,7 +438,16 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 		const results = r.value
 		const seenForSeed = new Set<number>()
 		for (let pos = 0; pos < Math.min(results.length, REC_PER_SEED); pos++) {
-			considerSeedRec(job.mediaType, job.seed.genre_ids ?? [], results[pos], job.seedIndex, pos, seenForSeed)
+			considerSeedRec(
+				job.mediaType,
+				job.seed.genre_ids ?? [],
+				job.seed.id,
+				job.seed.title,
+				results[pos],
+				job.seedIndex,
+				pos,
+				seenForSeed
+			)
 		}
 	}
 
@@ -283,13 +457,28 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 			const freq = totalSeeds > 0 ? s.seedHitCount / totalSeeds : 0
 			const voteCount = typeof s.item.vote_count === 'number' ? s.item.vote_count : 0
 			const voteAvg = typeof s.item.vote_average === 'number' ? s.item.vote_average : 0
+			const popularity = typeof (s.item as any).popularity === 'number' ? (s.item as any).popularity : 0
+			// Small tuning pass: reduce popularity bias and slightly favor well-rated, less-mainstream titles.
 			const score =
 				0.45 * freq +
 				0.35 * s.bestRecRank +
 				0.12 * s.bestGenreOverlap +
 				0.08 * s.bestDiscoverRank +
-				Math.log10(voteCount + 1) * 0.02 +
-				(voteAvg / 10) * 0.03
+				Math.log10(voteCount + 1) * 0.005 +
+				(voteAvg / 10) * 0.05 -
+				Math.log10(popularity + 1) * 0.02
+			if (debug && s.debug) {
+				s.debug.components = {
+					freq,
+					bestRecRank: s.bestRecRank,
+					bestGenreOverlap: s.bestGenreOverlap,
+					bestDiscoverRank: s.bestDiscoverRank,
+					voteCount,
+					voteAvg,
+					popularity,
+					score
+				}
+			}
 			return { item: s.item, score }
 		})
 		.sort((a, b) => b.score - a.score)
@@ -301,7 +490,61 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 	}
 
 	const finalItems = ranked.slice(0, Math.max(limit, DEFAULT_LIMIT))
-	await setHomeRecommendationsCache(finalItems)
+	if (!debug) await setHomeRecommendationsCache(finalItems)
+
+	if (debug) {
+		const items = finalItems.slice(0, limit)
+		const debugItems = items.map(it => {
+			const key = `${it.media_type}:${it.id}`
+			const stats = candidates.get(key)
+			const d = stats?.debug
+			const seedSources = d
+				? Array.from(d.seedSources.values())
+					.sort((a, b) => a.seedIndex - b.seedIndex || a.bestPos - b.bestPos)
+					.map(s => ({ mediaType: s.mediaType, id: s.id, title: s.title, bestPos: s.bestPos }))
+				: []
+			const keywordSources = d
+				? Array.from(d.keywordSources)
+					.map(id => ({ id, name: keywordNameById?.get(id) ?? String(id) }))
+					.sort((a, b) => a.name.localeCompare(b.name))
+				: []
+			const discover = d?.discoverSources ?? []
+			const via = {
+				seedRecommendations: (stats?.bestRecRank ?? 0) > 0,
+				genreDiscover: discover.some(s => s.kind === 'genre'),
+				keywordDiscover: discover.some(s => s.kind === 'keyword')
+			}
+			return {
+				key,
+				seedHitCount: stats?.seedHitCount ?? 0,
+				via,
+				seedSources,
+				keywordSources,
+				components: d?.components ?? null
+			}
+		})
+
+		const topKeywords = {
+			movie: Array.from(movieKeywordScores.entries())
+				.sort((a, b) => b[1] - a[1])
+				.slice(0, KEYWORDS_PER_TYPE)
+				.map(([id, score]) => ({ id, name: keywordNameById?.get(id) ?? String(id), score })),
+			tv: Array.from(tvKeywordScores.entries())
+				.sort((a, b) => b[1] - a[1])
+				.slice(0, KEYWORDS_PER_TYPE)
+				.map(([id, score]) => ({ id, name: keywordNameById?.get(id) ?? String(id), score }))
+		}
+
+		return json({
+			items,
+			debug: {
+				seeds: seedDebugList,
+				topGenres: { movie: movieGenres, tv: tvGenres },
+				topKeywords
+			},
+			debugItems
+		})
+	}
 
 	return json(finalItems.slice(0, limit))
 }

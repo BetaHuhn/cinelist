@@ -62,6 +62,11 @@ export interface TMDBGenre {
 	name: string
 }
 
+export interface TMDBKeyword {
+	id: number
+	name: string
+}
+
 export interface TMDBCastMember {
 	id: number
 	name: string
@@ -153,4 +158,17 @@ export interface TMDBTVDetailResponse extends TMDBTV {
 
 export interface TMDBPersonExternalIdsResponse {
 	imdb_id: string | null
+}
+
+// Keywords
+// Movie keywords endpoint returns `{ id, keywords: [...] }`.
+export interface TMDBMovieKeywordsResponse {
+	id: number
+	keywords: TMDBKeyword[]
+}
+
+// TV keywords endpoint returns `{ id, results: [...] }`.
+export interface TMDBTVKeywordsResponse {
+	id: number
+	results: TMDBKeyword[]
 }

@@ -2,7 +2,7 @@ import { storage } from '$storage'
 import type { TMDBMediaResult } from '$lib/types/tmdb'
 
 const PREFIX = 'recommendations'
-const HOME_KEY = `${PREFIX}:home:v2`
+const HOME_KEY = `${PREFIX}:home:v4`
 
 export interface CachedRecommendations {
 	cachedAt: number
