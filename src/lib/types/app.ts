@@ -15,6 +15,14 @@ export interface WatchlistItem {
 	onMediaServer: boolean
 }
 
+export interface FavoritePerson {
+	id: number
+	name: string
+	profile_path: string | null
+	known_for_department: string | null
+	addedAt: number
+}
+
 export type WatchlistStatus = 'all' | 'pending' | 'on-server'
 
 export interface AppRatings {

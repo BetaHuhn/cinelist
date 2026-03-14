@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
 import { dev } from '$app/environment'
 import { getWatchlist } from '$lib/kv/watchlist'
+import { getFavoritePeople } from '$lib/kv/people'
 import {
 	discoverMovies,
 	discoverTV,
@@ -27,6 +28,8 @@ const REC_CONCURRENCY = 4
 const KEYWORDS_PER_TYPE = 10
 const KEYWORD_QUERIES_PER_TYPE = 2
 const KEYWORD_CONCURRENCY = 4
+
+const PEOPLE_IDS_PER_QUERY = 5
 
 function parseLimit(url: URL): number {
 	const raw = url.searchParams.get('limit')
@@ -141,6 +144,8 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 	const watchlist = await getWatchlist()
 	if (watchlist.length === 0) return json([])
 
+	const favoritePeople = await getFavoritePeople().catch(() => [])
+
 	const inWatchlist = new Set(watchlist.map(i => `${i.mediaType}:${i.id}`))
 
 	const movieItems = watchlist.filter(i => i.mediaType === 'movie')
@@ -163,7 +168,7 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 	type CandidateDebug = {
 		seedSources: Map<string, { mediaType: 'movie' | 'tv'; id: number; title: string; bestPos: number; seedIndex: number }>
 		keywordSources: Set<number>
-		discoverSources: Array<{ kind: 'genre' | 'keyword'; id?: number; idx: number }>
+		discoverSources: Array<{ kind: 'genre' | 'keyword' | 'person'; id?: number; idx: number }>
 		components?: {
 			freq: number
 			bestRecRank: number
@@ -229,6 +234,24 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 		const pref = mediaType === 'movie' ? moviePref : tvPref
 		stats.bestGenreOverlap = Math.max(stats.bestGenreOverlap, prefOverlap(stats.item.genre_ids, pref))
 		if (debug && stats.debug) stats.debug.discoverSources.push({ kind: 'genre', idx: queryIndex })
+	}
+
+	function considerDiscoverPerson(
+		mediaType: 'movie' | 'tv',
+		raw: any,
+		queryIndex: number,
+		position: number,
+		seedPersonId?: number
+	) {
+		const stats = upsert(mediaType, raw)
+		if (!stats) return
+		// Keep this influence small; it's an extra nudge on top of the existing signals.
+		const peopleWeight = 0.45
+		const rankWeight = 1 / (position + 1)
+		stats.bestDiscoverRank = Math.max(stats.bestDiscoverRank, peopleWeight * rankWeight)
+		const pref = mediaType === 'movie' ? moviePref : tvPref
+		stats.bestGenreOverlap = Math.max(stats.bestGenreOverlap, prefOverlap(stats.item.genre_ids, pref))
+		if (debug && stats.debug) stats.debug.discoverSources.push({ kind: 'person', id: seedPersonId, idx: queryIndex })
 	}
 
 	function considerDiscoverKeyword(
@@ -324,6 +347,48 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 		for (let i = 0; i < results.length; i++) {
 			const raw = results[i]
 			considerDiscoverGenre(mediaType, raw, idx, i)
+		}
+	}
+
+	// Small "favorite people" influence: add a single discover query seeded by favorited people.
+	const favoriteIds = favoritePeople
+		.slice(0, PEOPLE_IDS_PER_QUERY)
+		.map(p => p.id)
+		.filter(id => typeof id === 'number' && Number.isFinite(id))
+	const peopleOr = favoriteIds.length ? favoriteIds.join('|') : undefined
+	if (peopleOr) {
+		const personSeedId = favoriteIds[0]
+		const peopleSettled = await Promise.allSettled([
+			discoverMovies(
+				{
+					with_people: peopleOr,
+					with_genres: movieGenreOr,
+					sort_by: 'popularity.desc',
+					page: 1,
+					include_adult: false,
+					'vote_count.gte': 25
+				},
+				fetch
+			),
+			discoverTV(
+				{
+					with_people: peopleOr,
+					with_genres: tvGenreOr,
+					sort_by: 'popularity.desc',
+					page: 1,
+					include_adult: false,
+					'vote_count.gte': 25
+				},
+				fetch
+			)
+		])
+		if (peopleSettled[0]?.status === 'fulfilled') {
+			const results = peopleSettled[0].value
+			for (let pos = 0; pos < results.length; pos++) considerDiscoverPerson('movie', results[pos], 0, pos, personSeedId)
+		}
+		if (peopleSettled[1]?.status === 'fulfilled') {
+			const results = peopleSettled[1].value
+			for (let pos = 0; pos < results.length; pos++) considerDiscoverPerson('tv', results[pos], 0, pos, personSeedId)
 		}
 	}
 
@@ -512,7 +577,8 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 			const via = {
 				seedRecommendations: (stats?.bestRecRank ?? 0) > 0,
 				genreDiscover: discover.some(s => s.kind === 'genre'),
-				keywordDiscover: discover.some(s => s.kind === 'keyword')
+				keywordDiscover: discover.some(s => s.kind === 'keyword'),
+				personDiscover: discover.some(s => s.kind === 'person')
 			}
 			return {
 				key,

@@ -2,7 +2,6 @@
 	import { fade } from 'svelte/transition'
 	import { backdropUrl, posterUrl, profileUrl } from '$lib/utils/image'
 	import { formatDate, formatRuntime } from '$lib/utils/format'
-	import { fetchPersonExternalIds } from '$lib/api/tmdb'
 	import RatingBadge from '$components/movie/RatingBadge.svelte'
 	import MovieGrid from '$components/movie/MovieGrid.svelte'
 	import WatchlistButton from '$components/watchlist/WatchlistButton.svelte'
@@ -10,7 +9,7 @@
 	import TrailerModal from '$components/modals/TrailerModal.svelte'
 	import Badge from '$components/ui/Badge.svelte'
 	import type { TVDetail } from '$lib/types/app'
-	import type { TMDBCastMember, TMDBMedia } from '$lib/types/tmdb'
+	import type { TMDBMedia } from '$lib/types/tmdb'
 
 	interface Props {
 		tv: TVDetail
@@ -21,40 +20,19 @@
 	let showTrailer = $state(false)
 
 	const topCast = $derived(tv.credits.cast.slice(0, 12))
+	const directors = $derived(
+		tv.credits.crew
+			.filter(c => c.job === 'Director')
+			.filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i)
+	)
+	const producers = $derived(
+		tv.credits.crew
+			.filter(c => c.job === 'Producer' || c.job === 'Executive Producer')
+			.filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i)
+	)
 	const runtime = $derived(tv.episode_run_time?.[0] ?? null)
 	const seasons = $derived((tv.seasons ?? []).filter(s => s.season_number !== 0))
 	const relatedItems = $derived(related.filter(m => m.id !== tv.id).slice(0, 12))
-
-	const personImdbCache = new Map<number, string | null>()
-
-	async function openPersonOnImdb(member: TMDBCastMember) {
-		if (typeof window === 'undefined') return
-
-		// Open the tab synchronously to avoid popup blockers.
-		const opened = window.open('about:blank', '_blank')
-		if (!opened) return
-		opened.opener = null
-
-		let imdbId: string | null
-		if (personImdbCache.has(member.id)) {
-			imdbId = personImdbCache.get(member.id) ?? null
-		} else {
-			try {
-				const externalIds = await fetchPersonExternalIds(member.id)
-				imdbId = externalIds.imdb_id ?? null
-				personImdbCache.set(member.id, imdbId)
-			} catch {
-				imdbId = null
-				personImdbCache.set(member.id, null)
-			}
-		}
-
-		const url = imdbId
-			? `https://www.imdb.com/name/${imdbId}/`
-			: `https://www.imdb.com/find/?q=${encodeURIComponent(member.name)}&s=nm`
-
-		opened.location.href = url
-	}
 </script>
 
 {#if showTrailer && tv.trailer}
@@ -129,6 +107,37 @@
 						<TrailerButton trailer={tv.trailer} onclick={() => (showTrailer = true)} />
 					{/if}
 				</div>
+
+				{#if directors.length > 0}
+					<p class="text-sm" style="color: var(--color-ink-500)">
+						Directed by
+						{#each directors.slice(0, 3) as d, i (d.id)}
+							{#if i > 0}, {/if}
+							<a
+								href={`/person/${d.id}`}
+								class="font-medium underline-offset-2 hover:underline"
+								style="color: var(--color-ink-300)"
+							>
+								{d.name}
+							</a>
+						{/each}
+					</p>
+				{/if}
+				{#if producers.length > 0}
+					<p class="text-sm" style="color: var(--color-ink-500)">
+						Produced by
+						{#each producers.slice(0, 3) as p, i (p.id)}
+							{#if i > 0}, {/if}
+							<a
+								href={`/person/${p.id}`}
+								class="font-medium underline-offset-2 hover:underline"
+								style="color: var(--color-ink-300)"
+							>
+								{p.name}
+							</a>
+						{/each}
+					</p>
+				{/if}
 			</div>
 		</div>
 
@@ -187,11 +196,10 @@
 				<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Cast</h2>
 				<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
 					{#each topCast as member, i (member.id + '-' + i)}
-						<button
-							type="button"
-							class="flex flex-col items-center text-center gap-2 bg-transparent border-0 p-0 appearance-none"
-							aria-label={`Open ${member.name} on IMDb`}
-							onclick={() => openPersonOnImdb(member)}
+						<a
+							href={`/person/${member.id}`}
+							class="flex flex-col items-center text-center gap-2"
+							style="color: inherit"
 						>
 							<div class="size-16 sm:size-20 rounded-full overflow-hidden flex-shrink-0" style="background: var(--color-surface-700)">
 								<img
@@ -205,7 +213,7 @@
 								<p class="text-xs font-semibold leading-tight" style="color: var(--color-ink-100)">{member.name}</p>
 								<p class="text-[11px] leading-tight mt-0.5 line-clamp-2" style="color: var(--color-ink-500)">{member.character}</p>
 							</div>
-						</button>
+						</a>
 					{/each}
 				</div>
 			</div>

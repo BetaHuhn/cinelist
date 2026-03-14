@@ -1,5 +1,7 @@
 export type TMDBMediaType = 'movie' | 'tv'
 
+export type TMDBMultiMediaType = TMDBMediaType | 'person'
+
 export interface TMDBMovie {
 	id: number
 	title: string
@@ -56,6 +58,17 @@ export type TMDBMedia = TMDBMovie | TMDBTV
 export type TMDBMediaResult =
 	| (TMDBMovie & { media_type: 'movie' })
 	| (TMDBTV & { media_type: 'tv' })
+
+export interface TMDBPerson {
+	id: number
+	name: string
+	profile_path: string | null
+	known_for_department?: string
+	popularity?: number
+	media_type?: 'person'
+}
+
+export type TMDBPersonResult = TMDBPerson & { media_type: 'person' }
 
 export interface TMDBGenre {
 	id: number
@@ -116,10 +129,41 @@ export interface TMDBSearchResponse {
 }
 
 export interface TMDBMultiSearchResponse {
-	results: Array<TMDBMediaResult | { media_type: 'person' }>
+	results: Array<TMDBMediaResult | TMDBPersonResult>
 	total_results: number
 	total_pages: number
 	page: number
+}
+
+export interface TMDBPersonSearchResponse {
+	results: TMDBPerson[]
+	total_results: number
+	total_pages: number
+	page: number
+}
+
+export interface TMDBPersonDetailResponse extends TMDBPerson {
+	biography?: string
+	birthday?: string | null
+	deathday?: string | null
+	place_of_birth?: string | null
+	also_known_as?: string[]
+	gender?: number
+}
+
+export type TMDBPersonCombinedCredit = (TMDBMovieResult | TMDBTVResult) & {
+	character?: string
+	job?: string
+	department?: string
+}
+
+export type TMDBMovieResult = TMDBMovie & { media_type: 'movie' }
+export type TMDBTVResult = TMDBTV & { media_type: 'tv' }
+
+export interface TMDBPersonCombinedCreditsResponse {
+	id: number
+	cast: TMDBPersonCombinedCredit[]
+	crew: TMDBPersonCombinedCredit[]
 }
 
 export interface TMDBReleaseDatesResult {

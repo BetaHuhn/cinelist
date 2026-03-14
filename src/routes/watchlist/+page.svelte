@@ -2,9 +2,10 @@
 	import { onMount } from 'svelte'
 	import { fade } from 'svelte/transition'
 	import { loadWatchlist, watchlist } from '$lib/stores/watchlist'
+	import { favoritePeople, removePersonFromFavorites } from '$lib/stores/people'
 	import type { WatchlistStatus, WatchlistItem } from '$lib/types/app'
 	import type { PageData } from './$types'
-	import { posterUrl } from '$lib/utils/image'
+	import { posterUrl, profileUrl } from '$lib/utils/image'
 	import { formatYear } from '$lib/utils/format'
 	import { addToast } from '$lib/stores/ui'
 	import MediaServerBadge from '$components/watchlist/MediaServerBadge.svelte'
@@ -32,7 +33,19 @@
 		if ($watchlist.length === 0 && data.items.length > 0) {
 			watchlist.set(data.items)
 		}
+		if ($favoritePeople.length === 0 && (data.people?.length ?? 0) > 0) {
+			favoritePeople.set(data.people)
+		}
 	})
+
+	async function removeFavoritePerson(id: number) {
+		try {
+			await removePersonFromFavorites(id)
+			addToast('Removed from favorites', 'success')
+		} catch {
+			addToast('Could not update favorites', 'error')
+		}
+	}
 
 	const filtered = $derived.by(() => {
 		const items = $watchlist
@@ -221,6 +234,40 @@
 			</button>
 		{/each}
 	</div>
+
+	{#if $favoritePeople.length > 0}
+		<div class="mb-10">
+			<div class="flex items-center justify-between mb-4">
+				<h2 class="text-lg font-semibold" style="color: var(--color-ink-100)">Favorite People</h2>
+				<span class="text-sm" style="color: var(--color-ink-500)">{$favoritePeople.length}</span>
+			</div>
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+				{#each $favoritePeople as person (person.id)}
+					<div class="flex items-center gap-4 rounded-xl p-4" style="background: var(--color-surface-800)">
+						<a href={`/person/${person.id}`} class="flex items-center gap-4 min-w-0 flex-1" style="color: inherit">
+							<div class="size-12 rounded-full overflow-hidden flex-shrink-0" style="background: var(--color-surface-700)">
+								<img
+									src={profileUrl(person.profile_path, 'w185')}
+									alt={person.name}
+									class="w-full h-full object-cover"
+									loading="lazy"
+								/>
+							</div>
+							<div class="min-w-0">
+								<p class="text-sm font-semibold truncate" style="color: var(--color-ink-100)">{person.name}</p>
+								{#if person.known_for_department}
+									<p class="text-xs truncate" style="color: var(--color-ink-500)">{person.known_for_department}</p>
+								{/if}
+							</div>
+						</a>
+						<Button variant="ghost" size="sm" onclick={() => removeFavoritePerson(person.id)}>
+							Remove
+						</Button>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
 
 	{#if filtered.length === 0}
 		<WatchlistEmpty filter={activeFilter} />

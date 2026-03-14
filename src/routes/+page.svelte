@@ -71,7 +71,7 @@
 			Discover trending movies and series, track what to watch, and know what's ready in your own library.
 		</p>
 		<div class="max-w-md mx-auto w-full">
-			<SearchBar placeholder="Search for movies & TV…" />
+			<SearchBar placeholder="Search for movies, TV & people…" />
 		</div>
 	</div>
 </section>

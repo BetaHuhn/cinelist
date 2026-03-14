@@ -4,10 +4,14 @@ import type {
 	TMDBTVDetailResponse,
 	TMDBSearchResponse,
 	TMDBMultiSearchResponse,
+	TMDBPersonSearchResponse,
 	TMDBMovie,
 	TMDBMediaResult,
 	TMDBPagedResponse,
 	TMDBTV,
+	TMDBPerson,
+	TMDBPersonDetailResponse,
+	TMDBPersonCombinedCreditsResponse,
 	TMDBPersonExternalIdsResponse,
 	TMDBMovieKeywordsResponse,
 	TMDBTVKeywordsResponse,
@@ -74,6 +78,20 @@ export async function searchMulti(
 	return data.results.filter(
 		(r): r is TMDBMediaResult => r.media_type === 'movie' || r.media_type === 'tv'
 	)
+}
+
+export async function searchPeople(
+	query: string,
+	opts?: typeof fetch | { fetchFn?: typeof fetch }
+): Promise<TMDBPerson[]> {
+	if (!query.trim()) return []
+	const fetchFn = typeof opts === 'function' ? opts : opts?.fetchFn
+	const data = await tmdbFetch<TMDBPersonSearchResponse>(
+		'/search/person',
+		{ query: query.trim(), include_adult: 'false' },
+		fetchFn
+	)
+	return Array.isArray(data.results) ? data.results : []
 }
 
 export async function fetchTrending(fetchFn?: typeof fetch): Promise<TMDBMediaResult[]> {
@@ -143,6 +161,7 @@ export type TMDBSortBy =
 export interface TMDBDiscoverParams {
 	with_genres?: string
 	with_keywords?: string
+	with_people?: string
 	sort_by?: TMDBSortBy
 	page?: number
 	include_adult?: boolean
@@ -156,6 +175,7 @@ function toDiscoverQuery(params: TMDBDiscoverParams): Record<string, string> {
 	}
 	if (params.with_genres) query.with_genres = params.with_genres
 	if (params.with_keywords) query.with_keywords = params.with_keywords
+	if (params.with_people) query.with_people = params.with_people
 	if (params.sort_by) query.sort_by = params.sort_by
 	if (params.page) query.page = String(params.page)
 	if (params['vote_count.gte'] != null) query['vote_count.gte'] = String(params['vote_count.gte'])
@@ -192,4 +212,15 @@ export function fetchPersonExternalIds(
 	fetchFn?: typeof fetch
 ): Promise<TMDBPersonExternalIdsResponse> {
 	return tmdbFetch<TMDBPersonExternalIdsResponse>(`/person/${id}/external_ids`, {}, fetchFn)
+}
+
+export function fetchPersonDetail(id: number, fetchFn?: typeof fetch): Promise<TMDBPersonDetailResponse> {
+	return tmdbFetch<TMDBPersonDetailResponse>(`/person/${id}`, {}, fetchFn)
+}
+
+export function fetchPersonCombinedCredits(
+	id: number,
+	fetchFn?: typeof fetch
+): Promise<TMDBPersonCombinedCreditsResponse> {
+	return tmdbFetch<TMDBPersonCombinedCreditsResponse>(`/person/${id}/combined_credits`, {}, fetchFn)
 }

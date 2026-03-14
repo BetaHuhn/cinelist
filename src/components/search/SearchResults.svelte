@@ -1,18 +1,20 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition'
 	import { page } from '$app/state'
-	import { posterUrl } from '$lib/utils/image'
+	import { goto } from '$app/navigation'
+	import { posterUrl, profileUrl } from '$lib/utils/image'
 	import { formatYear } from '$lib/utils/format'
-	import type { TMDBMediaResult } from '$lib/types/tmdb'
+	import type { TMDBMediaResult, TMDBPerson } from '$lib/types/tmdb'
 	import { watchlist } from '$lib/stores/watchlist'
 	import { openDetailPreview } from '$lib/utils/preview'
 
 	interface Props {
-		results: TMDBMediaResult[]
+		mediaResults: TMDBMediaResult[]
+		peopleResults: TMDBPerson[]
 		onclose?: () => void
 	}
 
-	let { results, onclose }: Props = $props()
+	let { mediaResults, peopleResults, onclose }: Props = $props()
 
 	const HOLD_MS = 450
 	const MOVE_PX = 10
@@ -80,13 +82,54 @@
 		}
 		if (onclose) onclose()
 	}
+
+	function handlePersonClick(e: MouseEvent, id: number) {
+		e.preventDefault()
+		if (onclose) onclose()
+		goto(`/person/${id}`)
+	}
 </script>
 
 <div
 	in:fly={{ y: -8, duration: 200 }}
 	class="absolute top-full left-0 right-0 mt-2 glass rounded-xl overflow-hidden shadow-2xl z-20 max-h-96 overflow-y-auto"
 >
-	{#each results.slice(0, 8) as movie (movie.media_type + ':' + movie.id)}
+	{#if peopleResults.length > 0}
+		<div class="px-4 py-2 text-[11px] font-semibold" style="color: var(--color-ink-500); border-bottom: 1px solid var(--color-surface-700)">
+			People
+		</div>
+		{#each peopleResults.slice(0, 4) as person (person.id)}
+			<a
+				href={`/person/${person.id}`}
+				onclick={(e) => handlePersonClick(e, person.id)}
+				class="flex items-center gap-3 px-4 py-3 transition-colors text-left"
+				style="color: inherit"
+				onmouseenter={(e) => (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-700)'}
+				onmouseleave={(e) => (e.currentTarget as HTMLElement).style.background = ''}
+			>
+				<img
+					src={profileUrl(person.profile_path, 'w45')}
+					alt={person.name}
+					class="size-10 rounded-full object-cover flex-shrink-0"
+					style="background: var(--color-surface-700)"
+				/>
+				<div class="flex-1 min-w-0 text-left">
+					<p class="text-sm font-medium truncate" style="color: var(--color-ink-100)">{person.name}</p>
+					{#if person.known_for_department}
+						<p class="text-xs truncate" style="color: var(--color-ink-500)">{person.known_for_department}</p>
+					{/if}
+				</div>
+			</a>
+		{/each}
+	{/if}
+
+	{#if mediaResults.length > 0}
+		<div class="px-4 py-2 text-[11px] font-semibold" style="color: var(--color-ink-500); border-bottom: 1px solid var(--color-surface-700)">
+			Movies & TV
+		</div>
+	{/if}
+
+	{#each mediaResults.slice(0, 8) as movie (movie.media_type + ':' + movie.id)}
 		{@const mediaType = movie.media_type}
 		{@const title = movie.media_type === 'movie' ? movie.title : movie.name}
 		{@const date = movie.media_type === 'movie' ? movie.release_date : movie.first_air_date}
@@ -132,9 +175,9 @@
 		</a>
 	{/each}
 
-	{#if results.length > 8}
+	{#if mediaResults.length > 8}
 		<p class="text-xs text-center py-2" style="color: var(--color-ink-500); border-top: 1px solid var(--color-surface-700)">
-			+{results.length - 8} more results
+			+{mediaResults.length - 8} more results
 		</p>
 	{/if}
 </div>

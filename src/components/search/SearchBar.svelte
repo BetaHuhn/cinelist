@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
-	import { searchMulti } from '$lib/api/tmdb'
-	import type { TMDBMediaResult } from '$lib/types/tmdb'
+	import { searchMulti, searchPeople } from '$lib/api/tmdb'
+	import type { TMDBMediaResult, TMDBPerson } from '$lib/types/tmdb'
 	import SearchResults from './SearchResults.svelte'
 
 	interface Props {
@@ -14,7 +14,8 @@
 	let { placeholder = 'Search movies & TV…', class: className = '', resetOnLeaveSearch = false }: Props = $props()
 
 	let query = $state('')
-	let results = $state<TMDBMediaResult[]>([])
+	let mediaResults = $state<TMDBMediaResult[]>([])
+	let peopleResults = $state<TMDBPerson[]>([])
 	let loading = $state(false)
 	let focused = $state(false)
 	let open = $state(false)
@@ -44,23 +45,40 @@
 			return
 		}
 		query = q
+		// On the /search page the results are already rendered below the bar;
+		// don't auto-open the suggestions dropdown (it would block clicks on the page).
+		if (page.url.pathname.startsWith('/search')) {
+			open = false
+			mediaResults = []
+			peopleResults = []
+			loading = false
+			clearTimeout(debounceTimer)
+			return
+		}
 		handleInput()
 	})
 
 	async function handleInput() {
 		clearTimeout(debounceTimer)
 		if (!query.trim()) {
-			results = []
+			mediaResults = []
+			peopleResults = []
 			open = false
 			return
 		}
 		debounceTimer = setTimeout(async () => {
 			loading = true
 			try {
-				results = await searchMulti(query)
-				open = results.length > 0
+				const [media, people] = await Promise.all([
+					searchMulti(query),
+					searchPeople(query)
+				])
+				mediaResults = media
+				peopleResults = people
+				open = mediaResults.length > 0 || peopleResults.length > 0
 			} catch {
-				results = []
+				mediaResults = []
+				peopleResults = []
 			} finally {
 				loading = false
 			}
@@ -69,7 +87,8 @@
 
 	function close(opts: { clearQuery?: boolean } = {}) {
 		open = false
-		results = []
+		mediaResults = []
+		peopleResults = []
 		if (opts.clearQuery ?? true) query = ''
 	}
 
@@ -77,7 +96,8 @@
 		const q = query.trim()
 		if (!q) return
 		open = false
-		results = []
+		mediaResults = []
+		peopleResults = []
 		await goto(`/search?q=${encodeURIComponent(q)}`)
 	}
 
@@ -97,22 +117,24 @@
 		submit()
 	}
 
-	function handleInputFocus() {
+	function handleFocusIn() {
 		focused = true
 	}
 
-	function handleInputBlur() {
+	function handleFocusOut(e: FocusEvent) {
+		const current = e.currentTarget as HTMLElement
+		const next = e.relatedTarget as Node | null
+		// Keep the dropdown open while focus is still within the search UI
+		// (e.g. user clicked a dropdown item).
+		if (next && current.contains(next)) return
 		focused = false
-		// Delay closing to allow click events on results to register
-		setTimeout(() => {
-			if (!focused) close()
-		}, 200)
+		close()
 	}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="relative {className}">
+<div class="relative {className}" onfocusin={handleFocusIn} onfocusout={handleFocusOut}>
 	<form class="relative z-20" onsubmit={handleSubmit}>
 		<svg class="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 pointer-events-none" style="color: var(--color-ink-500)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -121,8 +143,6 @@
 			bind:value={query}
 			oninput={handleInput}
 			onkeydown={handleInputKeydown}
-			onfocus={handleInputFocus}
-			onblur={handleInputBlur}
 			type="search"
 			{placeholder}
 			class="w-full pl-10 {query.trim() ? 'pr-28' : 'pr-4'} py-3 rounded-xl text-sm focus:outline-none transition-all duration-150"
@@ -143,8 +163,8 @@
 		{/if}
 	</form>
 
-	{#if open && results.length > 0 && focused}
-		<SearchResults {results} onclose={() => close({ clearQuery: true })} />
+	{#if open && focused}
+		<SearchResults {mediaResults} {peopleResults} onclose={() => close({ clearQuery: true })} />
 	{/if}
 
 	{#if open && focused}
