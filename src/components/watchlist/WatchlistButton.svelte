@@ -50,7 +50,7 @@
 		:          'var(--color-ink-300)'
 	)
 
-	const label = $derived(onServer ? 'On Server' : inList ? 'Saved' : 'Save')
+	const label = $derived(onServer ? 'Saved in Library' : inList ? 'Saved' : 'Save')
 	const icon  = $derived(inList ? '★' : '☆')
 
 	function raf() {
@@ -127,7 +127,7 @@
 			if (!inList) await addToWatchlist(media)
 			const current = $watchlist.find(i => i.id === media.id && i.mediaType === mediaType)
 			if (current && !current.onMediaServer) await toggleMediaServer(media.id, mediaType)
-			addToast('Saved & marked as on server', 'success')
+			addToast('Saved to watchlist & marked as saved in library', 'success')
 		} catch {
 			addToast('Something went wrong', 'error')
 		} finally {

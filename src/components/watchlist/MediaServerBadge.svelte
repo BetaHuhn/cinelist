@@ -18,7 +18,7 @@
 		loading = true
 		try {
 			await toggleMediaServer(id, mediaType)
-			addToast(onMediaServer ? 'Marked as not on server' : 'Marked as on media server', 'success')
+			addToast(onMediaServer ? 'Marked as not saved in library' : 'Marked as on media server', 'success')
 		} catch {
 			addToast('Failed to update', 'error')
 		} finally {
@@ -37,5 +37,5 @@
 		: 'background: color-mix(in srgb, var(--color-surface-600) 60%, transparent); color: var(--color-ink-500)'}
 >
 	<span class="size-1.5 rounded-full" style="background: {onMediaServer ? '#4ade80' : 'var(--color-ink-500)'}"></span>
-	{onMediaServer ? 'On Server' : 'Not on Server'}
+	{onMediaServer ? 'Saved in Library' : 'Not saved in Library'}
 </button>

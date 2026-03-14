@@ -122,7 +122,7 @@
 						class="text-xs font-medium px-1.5 py-0.5 rounded-md"
 						style="background: {onServer ? 'rgba(74,222,128,0.15)' : 'rgba(245,158,11,0.15)'}; color: {onServer ? '#4ade80' : 'var(--color-amber-500)'}"
 					>
-						{onServer ? 'On Server' : 'Saved'}
+						{onServer ? 'Saved in Library' : 'Saved'}
 					</span>
 				{/if}
 				{#if movie.vote_average > 0}

@@ -24,7 +24,7 @@
 {#if $toasts.length > 0}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
-		class="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4"
+		class="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4"
 		onmouseenter={() => (hovered = true)}
 		onmouseleave={() => (hovered = false)}
 	>

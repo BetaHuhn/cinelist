@@ -44,7 +44,7 @@
 	const tabs: { label: string; value: WatchlistStatus }[] = [
 		{ label: 'All', value: 'all' },
 		{ label: 'Pending', value: 'pending' },
-		{ label: 'On Server', value: 'on-server' }
+		{ label: 'Saved in Library', value: 'on-server' }
 	]
 
 	function hrefFor(item: WatchlistItem) {

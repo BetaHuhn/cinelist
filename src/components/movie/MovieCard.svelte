@@ -128,11 +128,11 @@
 			</div>
 		{/if}
 
-		<!-- On-server badge: always visible when on server -->
+		<!-- On-server badge: always visible when saved in library -->
 		{#if onServer}
 			<div class="absolute bottom-2 left-2 flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style="background: color-mix(in srgb, #052e16 85%, transparent); backdrop-filter: blur(4px); color: #4ade80">
 				<span class="size-1.5 rounded-full inline-block" style="background: #4ade80"></span>
-				On Server
+				Saved in Library
 			</div>
 		{/if}
 
