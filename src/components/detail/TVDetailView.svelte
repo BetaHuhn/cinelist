@@ -219,6 +219,45 @@
 			</div>
 		{/if}
 
+		<!-- Directors / Producers -->
+		{#if directors.length > 0 || producers.length > 0}
+			<div class="mt-10">
+				<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Crew</h2>
+				{#if directors.length > 0}
+					<h3 class="text-sm font-semibold mb-3" style="color: var(--color-ink-300)">Directors</h3>
+					<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+						{#each directors.slice(0, 12) as member, i (member.id + '-' + i)}
+							<a href={`/person/${member.id}`} class="flex flex-col items-center text-center gap-2" style="color: inherit">
+								<div class="size-16 sm:size-20 rounded-full overflow-hidden flex-shrink-0" style="background: var(--color-surface-700)">
+									<img src={profileUrl(member.profile_path)} alt={member.name} class="w-full h-full object-cover" loading="lazy" />
+								</div>
+								<div>
+									<p class="text-xs font-semibold leading-tight" style="color: var(--color-ink-100)">{member.name}</p>
+									<p class="text-[11px] leading-tight mt-0.5 line-clamp-2" style="color: var(--color-ink-500)">{member.job}</p>
+								</div>
+							</a>
+						{/each}
+					</div>
+				{/if}
+				{#if producers.length > 0}
+					<h3 class="text-sm font-semibold mb-3 mt-6" style="color: var(--color-ink-300)">Producers</h3>
+					<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+						{#each producers.slice(0, 12) as member, i (member.id + '-' + i)}
+							<a href={`/person/${member.id}`} class="flex flex-col items-center text-center gap-2" style="color: inherit">
+								<div class="size-16 sm:size-20 rounded-full overflow-hidden flex-shrink-0" style="background: var(--color-surface-700)">
+									<img src={profileUrl(member.profile_path)} alt={member.name} class="w-full h-full object-cover" loading="lazy" />
+								</div>
+								<div>
+									<p class="text-xs font-semibold leading-tight" style="color: var(--color-ink-100)">{member.name}</p>
+									<p class="text-[11px] leading-tight mt-0.5 line-clamp-2" style="color: var(--color-ink-500)">{member.job}</p>
+								</div>
+							</a>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		{/if}
+
 		<!-- Related -->
 		{#if relatedItems.length > 0}
 			<div class="mt-10">
