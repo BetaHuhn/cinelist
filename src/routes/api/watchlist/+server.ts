@@ -3,6 +3,9 @@ import { getWatchlist, addItem } from '$lib/kv/watchlist'
 import { clearHomeRecommendationsCache } from '$lib/kv/recommendations'
 import type { RequestHandler } from './$types'
 import type { WatchlistItem } from '$lib/types/app'
+import { isValidTmdbPath } from '$lib/utils/validation'
+
+const TITLE_MAX_LENGTH = 500
 
 export const GET: RequestHandler = async () => {
 	const items = await getWatchlist()
@@ -18,6 +21,15 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 	if (typeof body.title !== 'string' || !body.title.trim()) {
 		return json({ message: 'Missing title' }, { status: 400 })
+	}
+	if (body.title.trim().length > TITLE_MAX_LENGTH) {
+		return json({ message: 'Title too long' }, { status: 400 })
+	}
+	if (!isValidTmdbPath(body.poster_path)) {
+		return json({ message: 'Invalid poster_path' }, { status: 400 })
+	}
+	if (!isValidTmdbPath(body.backdrop_path)) {
+		return json({ message: 'Invalid backdrop_path' }, { status: 400 })
 	}
 	const releaseDate = typeof body.release_date === 'string' ? body.release_date : ''
 	const voteAverage = typeof body.vote_average === 'number' ? body.vote_average : 0

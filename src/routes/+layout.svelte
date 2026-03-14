@@ -27,7 +27,7 @@
 
 <div class="min-h-dvh flex flex-col">
 	<NavBar />
-	<main class="flex-1 pb-16 sm:pb-0">
+	<main class="flex-1 pb-16 sm:pb-0" aria-label="Main content">
 		<PageTransition>
 			{@render children()}
 		</PageTransition>

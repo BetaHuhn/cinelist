@@ -32,13 +32,12 @@ async function tmdbFetch<T>(
 	fetchFn: typeof fetch = fetch
 ): Promise<T> {
 	const url = new URL(`${BASE}${path}`)
-	url.searchParams.set('api_key', getApiKey())
 	for (const [k, v] of Object.entries(params)) {
 		url.searchParams.set(k, v)
 	}
 	const res = await fetchFn(url.toString(), {
 		headers: {
-			'Authorization': `Bearer ${getApiKey()}`,
+			'Authorization': `Bearer ${getApiKey()}`
 		}
 	})
 	if (!res.ok) throw new Error(`TMDB ${path} failed: ${res.status}`)
