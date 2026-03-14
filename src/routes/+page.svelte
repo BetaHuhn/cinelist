@@ -43,7 +43,8 @@
 			: { ...base, title: item.title, release_date: item.release_date }
 	}
 
-	const watchlistPreview = $derived.by(() => $watchlist.slice(0, previewCount).map(asMedia))
+	const watchlistPreview = $derived.by(() => $watchlist.filter(item => !item.onMediaServer).slice(0, previewCount).map(asMedia))
+	const libraryPreview = $derived.by(() => $watchlist.filter(item => item.onMediaServer).slice(0, previewCount).map(asMedia))
 
 	onMount(() => {
 		updatePreviewCount()
@@ -67,7 +68,7 @@
 			<span style="color: var(--color-amber-500)">Watchlist</span>
 		</h1>
 		<p class="text-lg max-w-md mx-auto" style="color: var(--color-ink-300)">
-			Discover trending movies and series, track what to watch, and know what's ready on your media server.
+			Discover trending movies and series, track what to watch, and know what's ready in your own library.
 		</p>
 		<div class="max-w-md mx-auto w-full">
 			<SearchBar placeholder="Search for movies & TV…" />
@@ -75,11 +76,27 @@
 	</div>
 </section>
 
-{#if $watchlist.length > 0}
+{#if watchlistPreview.length > 0}
 	<!-- Watchlist Preview Section -->
 	<section class="max-w-7xl mx-auto px-4 py-10">
 		<h2 class="text-xl font-bold mb-6" style="color: var(--color-ink-50)">From Your Watchlist</h2>
 		<MovieGrid movies={watchlistPreview} />
+	</section>
+{/if}
+
+{#if libraryPreview.length > 0}
+	<!-- Library Preview Section -->
+	<section class="max-w-7xl mx-auto px-4 py-10">
+		<h2 class="text-xl font-bold mb-6" style="color: var(--color-ink-50)">Ready in Your Library</h2>
+		<MovieGrid movies={libraryPreview} />
+	</section>
+{/if}
+
+{#if data.recommended?.length > 0}
+	<!-- Personalized Recommendations Section -->
+	<section class="max-w-7xl mx-auto px-4 py-10">
+		<h2 class="text-xl font-bold mb-6" style="color: var(--color-ink-50)">Recommended for You</h2>
+		<MovieGrid movies={data.recommended} />
 	</section>
 {/if}
 

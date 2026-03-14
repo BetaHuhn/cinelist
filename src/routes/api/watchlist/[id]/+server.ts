@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit'
 import { removeItem, toggleMediaServer } from '$lib/kv/watchlist'
+import { clearHomeRecommendationsCache } from '$lib/kv/recommendations'
 import type { RequestHandler } from './$types'
 
 function getMediaType(url: URL): 'movie' | 'tv' {
@@ -12,6 +13,7 @@ export const DELETE: RequestHandler = async ({ params, url }) => {
 	if (isNaN(id)) error(400, 'Invalid id')
 	const mediaType = getMediaType(url)
 	await removeItem(mediaType, id)
+	await clearHomeRecommendationsCache()
 	return new Response(null, { status: 204 })
 }
 
@@ -21,5 +23,6 @@ export const PATCH: RequestHandler = async ({ params, url }) => {
 	const mediaType = getMediaType(url)
 	const updated = await toggleMediaServer(mediaType, id)
 	if (!updated) error(404, 'Item not found')
+	await clearHomeRecommendationsCache()
 	return json(updated)
 }

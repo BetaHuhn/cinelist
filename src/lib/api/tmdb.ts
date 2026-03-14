@@ -115,6 +115,63 @@ export async function fetchTVRecommendations(
 	return data.results
 }
 
+export type TMDBSortBy =
+	| 'popularity.desc'
+	| 'popularity.asc'
+	| 'vote_average.desc'
+	| 'vote_average.asc'
+	| 'vote_count.desc'
+	| 'vote_count.asc'
+	| 'primary_release_date.desc'
+	| 'primary_release_date.asc'
+	| 'first_air_date.desc'
+	| 'first_air_date.asc'
+
+export interface TMDBDiscoverParams {
+	with_genres?: string
+	sort_by?: TMDBSortBy
+	page?: number
+	include_adult?: boolean
+	'vote_count.gte'?: number
+	'vote_average.gte'?: number
+}
+
+function toDiscoverQuery(params: TMDBDiscoverParams): Record<string, string> {
+	const query: Record<string, string> = {
+		include_adult: String(params.include_adult ?? false)
+	}
+	if (params.with_genres) query.with_genres = params.with_genres
+	if (params.sort_by) query.sort_by = params.sort_by
+	if (params.page) query.page = String(params.page)
+	if (params['vote_count.gte'] != null) query['vote_count.gte'] = String(params['vote_count.gte'])
+	if (params['vote_average.gte'] != null) query['vote_average.gte'] = String(params['vote_average.gte'])
+	return query
+}
+
+export async function discoverMovies(
+	params: TMDBDiscoverParams,
+	fetchFn?: typeof fetch
+): Promise<TMDBMovie[]> {
+	const data = await tmdbFetch<TMDBPagedResponse<TMDBMovie>>(
+		'/discover/movie',
+		toDiscoverQuery(params),
+		fetchFn
+	)
+	return data.results
+}
+
+export async function discoverTV(
+	params: TMDBDiscoverParams,
+	fetchFn?: typeof fetch
+): Promise<TMDBTV[]> {
+	const data = await tmdbFetch<TMDBPagedResponse<TMDBTV>>(
+		'/discover/tv',
+		toDiscoverQuery(params),
+		fetchFn
+	)
+	return data.results
+}
+
 export function fetchPersonExternalIds(
 	id: number,
 	fetchFn?: typeof fetch

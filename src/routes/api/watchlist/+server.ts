@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit'
 import { getWatchlist, addItem } from '$lib/kv/watchlist'
+import { clearHomeRecommendationsCache } from '$lib/kv/recommendations'
 import type { RequestHandler } from './$types'
 import type { WatchlistItem } from '$lib/types/app'
 
@@ -32,5 +33,6 @@ export const POST: RequestHandler = async ({ request }) => {
 		vote_average: voteAverage,
 		genre_ids: genreIds
 	})
+	await clearHomeRecommendationsCache()
 	return json(item, { status: 201 })
 }

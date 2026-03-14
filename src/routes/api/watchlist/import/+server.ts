@@ -1,6 +1,7 @@
 import { json, error } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
 import { addItem, getWatchlist } from '$lib/kv/watchlist'
+import { clearHomeRecommendationsCache } from '$lib/kv/recommendations'
 import type { WatchlistItem } from '$lib/types/app'
 import {
 	isMovieRow,
@@ -132,6 +133,10 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 		result.added++
 		result.addedIds.push(movie.id)
 		existingIds.add(movie.id)
+	}
+
+	if (!body.dryRun && result.added > 0) {
+		await clearHomeRecommendationsCache()
 	}
 
 	return json(result, { status: 200 })
