@@ -4,6 +4,8 @@
 	import { loadWatchlist, watchlist } from '$lib/stores/watchlist'
 	import { favoritePeople, removePersonFromFavorites } from '$lib/stores/people'
 	import type { WatchlistStatus, WatchlistItem } from '$lib/types/app'
+	import type { TMDBMedia } from '$lib/types/tmdb'
+	import type { LibraryCardSize } from '$lib/types/config'
 	import type { PageData } from './$types'
 	import { profileUrl } from '$lib/utils/image'
 	import { addToast } from '$lib/stores/ui'
@@ -11,12 +13,14 @@
 	import Button from '$components/ui/Button.svelte'
 	import LibraryMediaCard from '$components/library/LibraryMediaCard.svelte'
 	import FeaturedCarousel from '$components/library/FeaturedCarousel.svelte'
+	import MovieGrid from '$components/movie/MovieGrid.svelte'
 	import { openDetailPreview } from '$lib/utils/preview'
 	import { page } from '$app/state'
 
 	let { data }: { data: PageData } = $props()
 
 	let activeFilter = $state<WatchlistStatus>('ready')
+	let activeCardSize = $state<LibraryCardSize>('small')
 	let importing = $state(false)
 	let fileInput = $state<HTMLInputElement | null>(null)
 
@@ -38,6 +42,44 @@
 		return 1
 	}
 
+	function isLibraryCardSize(value: unknown): value is LibraryCardSize {
+		return value === 'small' || value === 'medium'
+	}
+
+	async function loadLibraryCardSizeConfig() {
+		try {
+			const res = await fetch('/api/config/libraryCardSize')
+			if (!res.ok) return
+			const payload = (await res.json()) as { value?: unknown }
+			if (isLibraryCardSize(payload.value)) {
+				activeCardSize = payload.value
+			}
+		} catch {}
+	}
+
+	async function persistLibraryCardSizeConfig(value: LibraryCardSize) {
+		const res = await fetch('/api/config/libraryCardSize', {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ value })
+		})
+		if (!res.ok) throw new Error('Save failed')
+	}
+
+	async function handleCardSizeChange(e: Event) {
+		const value = (e.currentTarget as HTMLSelectElement).value
+		if (!isLibraryCardSize(value) || value === activeCardSize) return
+
+		const previous = activeCardSize
+		activeCardSize = value
+		try {
+			await persistLibraryCardSizeConfig(value)
+		} catch {
+			activeCardSize = previous
+			addToast('Could not save card size preference', 'error')
+		}
+	}
+
 	onMount(() => {
 		if ($watchlist.length === 0 && data.items.length > 0) {
 			watchlist.set(data.items)
@@ -50,6 +92,7 @@
 		const onResize = () => {
 			peopleCols = computePeopleCols(window.innerWidth)
 		}
+		void loadLibraryCardSizeConfig()
 		window.addEventListener('resize', onResize, { passive: true })
 		return () => window.removeEventListener('resize', onResize)
 	})
@@ -108,6 +151,25 @@
 		{ label: 'Watched', value: 'watched' },
 		{ label: 'All', value: 'all' }
 	]
+
+	function asMedia(item: WatchlistItem): TMDBMedia {
+		const base = {
+			id: item.id,
+			overview: '',
+			poster_path: item.poster_path,
+			backdrop_path: item.backdrop_path,
+			vote_average: item.vote_average,
+			vote_count: 0,
+			genre_ids: item.genre_ids,
+			popularity: 0,
+			original_language: 'en' as const
+		}
+		return item.mediaType === 'tv'
+			? { ...base, name: item.title, first_air_date: item.release_date }
+			: { ...base, title: item.title, release_date: item.release_date }
+	}
+
+	const filteredAsMedia = $derived.by(() => filtered.map(asMedia))
 
 	function hrefFor(item: WatchlistItem) {
 		return item.mediaType === 'tv' ? `/tv/${item.id}` : `/movie/${item.id}`
@@ -288,37 +350,57 @@
 		</div>
 	{/if}
 
-	<!-- Filter tabs -->
-	<div class="flex gap-1 mb-8 p-1 rounded-xl w-fit" style="background: var(--color-surface-800)">
-		{#each tabs as tab (tab.value)}
-			<button
-				onclick={() => (activeFilter = tab.value)}
-				class="px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 ease-spring"
-				style={activeFilter === tab.value
-					? 'background: var(--color-surface-600); color: var(--color-ink-50)'
-					: 'color: var(--color-ink-500)'}
+	<!-- Filter tabs + card size selector -->
+	<div class="flex items-center justify-between gap-4 mb-8">
+		<div class="flex gap-1 p-1 rounded-xl w-fit" style="background: var(--color-surface-800)">
+			{#each tabs as tab (tab.value)}
+				<button
+					onclick={() => (activeFilter = tab.value)}
+					class="px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 ease-spring"
+					style={activeFilter === tab.value
+						? 'background: var(--color-surface-600); color: var(--color-ink-50)'
+						: 'color: var(--color-ink-500)'}
+				>
+					{tab.label}
+					<!-- {#if tab.value === activeFilter}
+						<span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="background: rgba(74,222,128,0.15); color: #4ade80">
+							{#if tab.value === 'all'}
+								{$watchlist.length}
+							{:else if tab.value === 'ready'}
+								{readyCount}
+							{:else if tab.value === 'pending'}
+								{pendingCount}
+							{:else}
+								{watchedCount}
+							{/if}
+						</span>
+					{/if} -->
+				</button>
+			{/each}
+		</div>
+
+		<div class="flex items-center gap-2 ml-auto">
+			<label for="library-card-size" class="text-xs sm:text-sm" style="color: var(--color-ink-500)">
+				Card size
+			</label>
+			<select
+				id="library-card-size"
+				value={activeCardSize}
+				onchange={handleCardSizeChange}
+				class="text-xs sm:text-sm rounded-lg px-2.5 py-1.5 outline-0"
+				style="background: var(--color-surface-800); color: var(--color-ink-100); border: 1px solid var(--color-surface-700)"
 			>
-				{tab.label}
-				<!-- {#if tab.value === activeFilter}
-					<span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="background: rgba(74,222,128,0.15); color: #4ade80">
-						{#if tab.value === 'all'}
-							{$watchlist.length}
-						{:else if tab.value === 'ready'}
-							{readyCount}
-						{:else if tab.value === 'pending'}
-							{pendingCount}
-						{:else}
-							{watchedCount}
-						{/if}
-					</span>
-				{/if} -->
-			</button>
-		{/each}
+				<option value="small">Small</option>
+				<option value="medium">Medium</option>
+			</select>
+		</div>
 	</div>
 
 	{#if filtered.length === 0}
 		<WatchlistEmpty filter={activeFilter} />
-	{:else}
+	{:else if activeCardSize === 'medium'}
+		<MovieGrid movies={filteredAsMedia} />
+	{:else if activeCardSize === 'small'}
 		<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 			{#each filtered as item (item.mediaType + ':' + item.id)}
 				<LibraryMediaCard
