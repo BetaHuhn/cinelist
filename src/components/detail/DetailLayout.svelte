@@ -27,7 +27,7 @@
 </div>
 
 <!-- Content -->
-<div class="max-w-5xl mx-auto px-4 -mt-32 relative z-10 pb-16">
+<div class="max-w-5xl mx-auto px-6 -mt-32 relative z-10 pb-16">
 	<div class="flex flex-col sm:flex-row gap-8">
 		<!-- Poster -->
 		<div class="shrink-0 mx-auto sm:mx-0">

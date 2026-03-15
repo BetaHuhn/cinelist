@@ -35,7 +35,7 @@ function getReleaseDate(media: TMDBMedia): string {
 
 export async function addToWatchlist(media: TMDBMedia): Promise<void> {
 	const mediaType = inferMediaType(media)
-	const payload: Omit<WatchlistItem, 'addedAt' | 'onMediaServer'> = {
+	const payload: Omit<WatchlistItem, 'addedAt' | 'onMediaServer' | 'watched'> = {
 		mediaType,
 		id: media.id,
 		title: getTitle(media),
@@ -47,7 +47,7 @@ export async function addToWatchlist(media: TMDBMedia): Promise<void> {
 	}
 
 	// Optimistic update
-	const optimistic: WatchlistItem = { ...payload, addedAt: Date.now(), onMediaServer: false }
+	const optimistic: WatchlistItem = { ...payload, addedAt: Date.now(), onMediaServer: false, watched: false }
 	watchlist.update(items => [optimistic, ...items])
 
 	try {
@@ -91,6 +91,27 @@ export async function toggleMediaServer(id: number, mediaType: MediaType = 'movi
 
 	try {
 		const res = await fetch(`/api/watchlist/${id}?type=${mediaType}`, { method: 'PATCH' })
+		if (!res.ok) throw new Error('Failed to toggle')
+		const updated = (await res.json()) as WatchlistItem
+		watchlist.update(items =>
+			items.map(i => (i.id === updated.id && i.mediaType === updated.mediaType ? updated : i))
+		)
+	} catch {
+		watchlist.set(prev)
+	}
+}
+
+export async function toggleWatched(id: number, mediaType: MediaType = 'movie'): Promise<void> {
+	const prev = get(watchlist)
+	// Optimistic toggle
+	watchlist.update(items =>
+		items.map(i =>
+			i.id === id && i.mediaType === mediaType ? { ...i, watched: !i.watched } : i
+		)
+	)
+
+	try {
+		const res = await fetch(`/api/watchlist/${id}?type=${mediaType}&toggle=watched`, { method: 'PATCH' })
 		if (!res.ok) throw new Error('Failed to toggle')
 		const updated = (await res.json()) as WatchlistItem
 		watchlist.update(items =>

@@ -122,6 +122,14 @@
 		{@const href = movie.media_type === 'tv' ? `/tv/${movie.id}` : `/movie/${movie.id}`}
 		{@const item = $watchlist.find(i => i.id === movie.id && i.mediaType === mediaType)}
 		{@const onServer = item?.onMediaServer ?? false}
+		{@const watched = item?.watched ?? false}
+		{@const indicator = !item ? null : watched ? '✓' : '★'}
+		{@const indicatorColor = !item
+			? ''
+			: watched || onServer
+				? '#4ade80'
+				: 'var(--color-amber-500)'
+		}
 		{@const isSelected = selectedIndex === i}
 		<a
 			href={href}
@@ -154,13 +162,8 @@
 				<p class="text-xs" style="color: var(--color-ink-500)">{formatYear(date)}</p>
 			</div>
 			<div class="flex items-center gap-2 flex-shrink-0">
-				{#if item}
-					<span
-						class="text-xs font-medium px-1.5 py-0.5 rounded-md"
-						style="background: {onServer ? 'rgba(74,222,128,0.15)' : 'rgba(245,158,11,0.15)'}; color: {onServer ? '#4ade80' : 'var(--color-amber-500)'}"
-					>
-						{onServer ? 'Saved in Library' : 'Saved'}
-					</span>
+				{#if indicator}
+					<span class="text-sm font-bold" style="color: {indicatorColor}">{indicator}</span>
 				{/if}
 				{#if movie.vote_average > 0}
 					<span class="text-xs font-semibold" style="color: var(--color-amber-500)">★ {movie.vote_average.toFixed(1)}</span>

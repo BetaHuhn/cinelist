@@ -74,7 +74,7 @@
 
 			<!-- Actions -->
 			<div class="flex items-center gap-3 flex-wrap">
-				<WatchlistButton bind:this={watchlistButton} media={movie} size="lg" showLabel />
+				<WatchlistButton bind:this={watchlistButton} media={movie} size="lg" />
 				{#if movie.trailer}
 					<TrailerButton trailer={movie.trailer} onclick={() => (showTrailer = true)} />
 				{/if}

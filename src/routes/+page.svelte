@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte'
 	import MovieGrid from '$components/movie/MovieGrid.svelte'
 	import SearchBar from '$components/search/SearchBar.svelte'
+	import FeaturedCarousel from '$components/library/FeaturedCarousel.svelte'
 	import { watchlist } from '$lib/stores/watchlist'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 	import type { WatchlistItem } from '$lib/types/app'
@@ -43,8 +44,12 @@
 			: { ...base, title: item.title, release_date: item.release_date }
 	}
 
-	const watchlistPreview = $derived.by(() => $watchlist.filter(item => !item.onMediaServer).slice(0, previewCount).map(asMedia))
-	const libraryPreview = $derived.by(() => $watchlist.filter(item => item.onMediaServer).slice(0, previewCount).map(asMedia))
+	const watchlistPreview = $derived.by(() =>
+		$watchlist.filter(item => !item.watched && !item.onMediaServer).slice(0, previewCount).map(asMedia)
+	)
+	const libraryPreview = $derived.by(() =>
+		$watchlist.filter(item => !item.watched && item.onMediaServer).slice(0, previewCount).map(asMedia)
+	)
 
 	onMount(() => {
 		updatePreviewCount()
@@ -75,6 +80,12 @@
 		</div>
 	</div>
 </section>
+
+{#if data.featured?.length > 0}
+	<section class="max-w-7xl mx-auto px-4 py-10">
+		<FeaturedCarousel items={data.featured} />
+	</section>
+{/if}
 
 {#if data.recommended?.length > 0}
 	<!-- Personalized Recommendations Section -->

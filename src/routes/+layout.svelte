@@ -63,10 +63,10 @@
 				void goto('/')
 				return
 			}
-			if (k === 'w') {
+			if (k === 'l') {
 				e.preventDefault()
 				clearPendingG()
-				void goto('/watchlist')
+				void goto('/library')
 				return
 			}
 			if (k === 's') {

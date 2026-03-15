@@ -1,7 +1,9 @@
 import { isEditableTarget } from '$lib/utils/keyboard'
 
+export type WatchlistKeyboardIntent = 'watchlist' | 'ready' | 'watched'
+
 export type WatchlistButtonHandle = {
-	keyboardPressStart: () => void
+	keyboardPressStart: (intent?: WatchlistKeyboardIntent) => void
 	keyboardPressEnd: () => Promise<void>
 	keyboardPressAbort: () => void
 }
@@ -21,11 +23,12 @@ export function createDetailHotkeys(options: Options) {
 		if (isEditableTarget(e.target)) return
 
 		const k = e.key.toLowerCase()
-		if (k === 's' || k === 'w' || k === 'f') {
+		if (k === 's' || k === 'f' || k === 'l' || k === 'w') {
 			e.preventDefault()
 			if (holdKey) return
 			holdKey = k
-			options.getWatchlistButton()?.keyboardPressStart()
+			const intent: WatchlistKeyboardIntent = k === 'l' ? 'ready' : k === 'w' ? 'watched' : 'watchlist'
+			options.getWatchlistButton()?.keyboardPressStart(intent)
 			return
 		}
 

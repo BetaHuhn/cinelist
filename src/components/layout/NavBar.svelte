@@ -5,7 +5,7 @@
 
 	const navLinks = [
 		{ href: '/', label: 'Discover' },
-		{ href: '/watchlist', label: 'Watchlist' }
+		{ href: '/library', label: 'Library' }
 	]
 
 	const currentPath = $derived(page.url.pathname)

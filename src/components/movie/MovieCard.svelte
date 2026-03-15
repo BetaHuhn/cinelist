@@ -27,7 +27,6 @@
 
 	const item = $derived($watchlist.find(i => i.id === movie.id && i.mediaType === mediaType))
 	const saved = $derived(item !== undefined)
-	const onServer = $derived(item?.onMediaServer ?? false)
 
 	const HOLD_MS = 450
 	const MOVE_PX = 10
@@ -35,6 +34,7 @@
 	let startX = $state(0)
 	let startY = $state(0)
 	let suppressClick = $state(false)
+	let suppressNavOnce = $state(false)
 
 	function fromPath(): string {
 		return (page.state as App.PageState | undefined)?.preview?.from
@@ -52,6 +52,22 @@
 	}
 
 	function handleClick(e: MouseEvent) {
+		// If the pointer interaction started on an interactive child (e.g. WatchlistButton),
+		// suppress exactly the next link click. This also covers cases where the
+		// pointer is released outside the button and the synthetic click targets the <a>.
+		if (suppressNavOnce) {
+			e.preventDefault()
+			e.stopPropagation()
+			suppressNavOnce = false
+			return
+		}
+		// If the click originated from an interactive child (e.g. WatchlistButton),
+		// suppress link navigation.
+		if (isInteractiveTarget(e.target)) {
+			e.preventDefault()
+			e.stopPropagation()
+			return
+		}
 		if (suppressClick) {
 			e.preventDefault()
 			e.stopPropagation()
@@ -73,7 +89,13 @@
 	}
 
 	function startHold(e: PointerEvent) {
-		if (isInteractiveTarget(e.target)) return
+		// If the interaction begins on an interactive child, don't start the preview
+		// hold gesture and suppress the next link click.
+		if (isInteractiveTarget(e.target)) {
+			suppressNavOnce = true
+			abortHold()
+			return
+		}
 		if (e.button !== 0) return
 		abortHold()
 		startX = e.clientX
@@ -92,6 +114,8 @@
 	}
 
 	function endHold() {
+		// Clear suppression after the synthetic click (if any) had a chance to fire.
+		if (suppressNavOnce) setTimeout(() => (suppressNavOnce = false), 0)
 		abortHold()
 	}
 </script>
@@ -128,21 +152,9 @@
 			</div>
 		{/if}
 
-		<!-- On-server badge: always visible when saved in library -->
-		{#if onServer}
-			<div class="absolute bottom-2 left-2 flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style="background: color-mix(in srgb, #052e16 85%, transparent); backdrop-filter: blur(4px); color: #4ade80">
-				<span class="size-1.5 rounded-full inline-block" style="background: #4ade80"></span>
-				Saved in Library
-			</div>
-		{/if}
-
-		<!-- Watchlist button: always visible when saved, only on hover otherwise -->
-		<div
-			class="absolute top-2 right-2 transition-opacity duration-200"
-			class:opacity-0={!saved}
-			class:group-hover:opacity-100={true}
-		>
-			<WatchlistButton media={movie} size="sm" />
+		<!-- Unified state button: always visible -->
+		<div class="absolute top-2 right-2">
+			<WatchlistButton media={movie} size="md" hideDropdown hideTooltip hideLabel />
 		</div>
 	</div>
 
