@@ -1,7 +1,7 @@
 import { searchMulti, searchPeople } from '$lib/api/tmdb'
-import type { PageLoad } from './$types'
+import type { PageServerLoad } from './$types'
 
-export const load: PageLoad = async ({ url, fetch }) => {
+export const load: PageServerLoad = async ({ url, fetch }) => {
 	const q = url.searchParams.get('q')?.trim() ?? ''
 	if (!q) return { q, results: [], people: [] }
 

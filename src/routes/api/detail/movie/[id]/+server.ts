@@ -1,10 +1,10 @@
+import { json, error } from '@sveltejs/kit'
+import type { RequestHandler } from './$types'
 import { fetchMovieDetail, fetchMovieRecommendations } from '$lib/api/tmdb'
 import { fetchOMDBByImdbId } from '$lib/api/omdb'
 import { buildMovieDetail } from '$lib/utils/format'
-import { error } from '@sveltejs/kit'
-import type { PageLoad } from './$types'
 
-export const load: PageLoad = async ({ params, fetch }) => {
+export const GET: RequestHandler = async ({ params, fetch }) => {
 	const id = parseInt(params.id, 10)
 	if (isNaN(id)) error(400, 'Invalid movie ID')
 
@@ -12,8 +12,10 @@ export const load: PageLoad = async ({ params, fetch }) => {
 		fetchMovieDetail(id, fetch),
 		fetchMovieRecommendations(id, fetch).catch(() => [])
 	])
-	const omdb = detail.imdb_id ? await fetchOMDBByImdbId(detail.imdb_id, fetch).catch(() => null) : null
+	const omdb = detail.imdb_id
+		? await fetchOMDBByImdbId(detail.imdb_id, fetch).catch(() => null)
+		: null
 
 	const movie = buildMovieDetail(detail, omdb)
-	return { movie, related }
+	return json({ movie, related })
 }

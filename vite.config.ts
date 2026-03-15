@@ -45,15 +45,6 @@ export default defineConfig({
 							expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
 							cacheableResponse: { statuses: [0, 200] }
 						}
-					},
-					{
-						urlPattern: /^https:\/\/api\.themoviedb\.org\/.*/i,
-						handler: 'NetworkFirst',
-						options: {
-							cacheName: 'tmdb-api',
-							expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 },
-							cacheableResponse: { statuses: [0, 200] }
-						}
 					}
 				]
 			}
