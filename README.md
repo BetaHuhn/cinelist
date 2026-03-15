@@ -163,6 +163,23 @@ If you keep secrets in a local `.env`, you may prefer Deno’s env-file support:
 deno run -A --env-file=.env build/index.js
 ```
 
+## Build & Run (Docker)
+
+Build the image:
+
+```sh
+docker build -t cinelist .
+```
+
+Run the container on port `8000`:
+
+```sh
+docker run --rm -p 8000:8000 \
+	-e PUBLIC_TMDB_API_KEY=YOUR_TMDB_API_KEY \
+	-e PUBLIC_OMDB_API_KEY=YOUR_OMDB_KEY \
+	cinelist
+```
+
 ## CSV Import
 
 The Watchlist import accepts a `.csv` with either:

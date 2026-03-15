@@ -32,9 +32,19 @@ import { createStorage } from 'unstorage'
 import denoKvDriver from 'unstorage/drivers/deno-kv'
 
 const DB_PATH = './.data/cinelist.kv'
+const DENO_KV_HOST = Deno.env.get('DENO_KV_HOST')
 
 export const storage = createStorage({
 	driver: denoKvDriver({
-		path: DB_PATH
+		path: DB_PATH,
+		openKv: async () => {
+			if (DENO_KV_HOST) {
+				console.log(`Connecting to Deno KV at ${DENO_KV_HOST}`)
+				return await Deno.openKv(DENO_KV_HOST)
+			}
+
+			console.log(`Using local Deno KV at ${DB_PATH}`)
+			return undefined
+		}
 	})
 })
