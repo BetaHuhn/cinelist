@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte'
 	import MovieGrid from '$components/movie/MovieGrid.svelte'
 	import SearchBar from '$components/search/SearchBar.svelte'
+	import FeaturedCarousel from '$components/library/FeaturedCarousel.svelte'
 	import { watchlist } from '$lib/stores/watchlist'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 	import type { WatchlistItem } from '$lib/types/app'
@@ -43,8 +44,12 @@
 			: { ...base, title: item.title, release_date: item.release_date }
 	}
 
-	const watchlistPreview = $derived.by(() => $watchlist.filter(item => !item.onMediaServer).slice(0, previewCount).map(asMedia))
-	const libraryPreview = $derived.by(() => $watchlist.filter(item => item.onMediaServer).slice(0, previewCount).map(asMedia))
+	const watchlistPreview = $derived.by(() =>
+		$watchlist.filter(item => !item.watched && !item.onMediaServer).slice(0, previewCount).map(asMedia)
+	)
+	const libraryPreview = $derived.by(() =>
+		$watchlist.filter(item => !item.watched && item.onMediaServer).slice(0, previewCount).map(asMedia)
+	)
 
 	onMount(() => {
 		updatePreviewCount()
@@ -76,6 +81,32 @@
 	</div>
 </section>
 
+{#if data.featured?.length > 0}
+	<section class="max-w-7xl mx-auto px-4 py-10">
+		<FeaturedCarousel items={data.featured} />
+	</section>
+{/if}
+
+{#if data.recommended?.length > 0}
+	<!-- Personalized Recommendations Section -->
+	<section class="max-w-7xl mx-auto px-4 py-10">
+		<div class="mb-6">
+			<h2 class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Recommended for You</h2>
+			<p class="text-sm mb-4" style="color: var(--color-ink-300)">Based on your watchlist and ratings</p>
+		</div>
+		<MovieGrid movies={data.recommended} />
+	</section>
+{/if}
+
+<!-- Trending Section -->
+<section class="max-w-7xl mx-auto px-4 py-10">
+	<div class="mb-6">
+		<h2 class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Trending Now</h2>
+		<p class="text-sm mb-4" style="color: var(--color-ink-300)">What's popular this week</p>
+	</div>
+	<MovieGrid movies={data.trending} />
+</section>
+
 {#if watchlistPreview.length > 0}
 	<!-- Watchlist Preview Section -->
 	<section class="max-w-7xl mx-auto px-4 py-10">
@@ -91,17 +122,3 @@
 		<MovieGrid movies={libraryPreview} />
 	</section>
 {/if}
-
-{#if data.recommended?.length > 0}
-	<!-- Personalized Recommendations Section -->
-	<section class="max-w-7xl mx-auto px-4 py-10">
-		<h2 class="text-xl font-bold mb-6" style="color: var(--color-ink-50)">Recommended for You</h2>
-		<MovieGrid movies={data.recommended} />
-	</section>
-{/if}
-
-<!-- Trending Section -->
-<section class="max-w-7xl mx-auto px-4 py-10">
-	<h2 class="text-xl font-bold mb-6" style="color: var(--color-ink-50)">Trending This Week</h2>
-	<MovieGrid movies={data.trending} />
-</section>

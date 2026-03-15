@@ -9,7 +9,11 @@ export async function loadFavoritePeople(): Promise<void> {
 		const res = await fetch('/api/people')
 		if (!res.ok) throw new Error('Failed')
 		const items = (await res.json()) as FavoritePerson[]
-		favoritePeople.set(Array.isArray(items) ? items : [])
+		favoritePeople.set(
+			Array.isArray(items)
+				? items.filter((p) => typeof p?.id === 'number' && Number.isFinite(p.id) && p.id > 0)
+				: []
+		)
 	} catch {
 		favoritePeople.set([])
 	} finally {

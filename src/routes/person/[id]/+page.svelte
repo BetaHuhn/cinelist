@@ -11,11 +11,15 @@
 	let { data }: { data: PageData } = $props()
 
 	const person = $derived(data.person)
+	const primaryLabel = $derived(data.primaryLabel ?? 'Credits')
+	const primaryCredits = $derived(data.primary ?? [])
 	const acting = $derived(data.acting ?? [])
 	const crew = $derived(data.crew ?? [])
+	const crewLabel = $derived(primaryLabel === 'Acting Credits' ? 'Crew Credits' : 'Other Crew Credits')
 
 	const isFav = $derived($favoritePeople.some(p => p.id === person.id))
 	let saving = $state(false)
+	let showMore = $state(false)
 
 	async function toggle() {
 		const wasFav = isFav
@@ -59,33 +63,50 @@
 					</p>
 				</div>
 				<div class="flex-shrink-0">
-						<Button variant={isFav ? 'primary' : 'ghost'} size="sm" loading={saving} onclick={toggle}>
-						{isFav ? 'Favorited' : 'Favorite'}
+					<Button variant={isFav ? 'primary' : 'ghost'} size="sm" loading={saving} onclick={toggle}>
+						{isFav ? '★ Favorited' : '☆ Favorite'}
 					</Button>
 				</div>
 			</div>
 
 			{#if person.biography}
-				<p class="text-sm mt-4 leading-relaxed" style="color: var(--color-ink-300)">{person.biography}</p>
+				{#if showMore}
+					<p class="text-sm mt-4 leading-relaxed" style="color: var(--color-ink-300)">
+						{person.biography}
+					</p>
+					<button class="text-sm" style="color: var(--color-ink-400)" onclick={() => showMore = false}>Less</button>
+				{:else}
+					<p class="text-sm mt-4 leading-relaxed line-clamp-3" style="color: var(--color-ink-300)">
+						{person.biography}
+					</p>
+					<button class="text-sm" style="color: var(--color-ink-400)" onclick={() => showMore = true}>More</button>
+				{/if}
 			{/if}
 		</div>
 	</div>
 
+	{#if primaryCredits.length > 0}
+		<div class="mt-10">
+			<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">{primaryLabel}</h2>
+			<MovieGrid movies={primaryCredits} />
+		</div>
+	{/if}
+
 	{#if acting.length > 0}
 		<div class="mt-10">
 			<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Acting Credits</h2>
-			<MovieGrid movies={acting.slice(0, 36)} />
+			<MovieGrid movies={acting} />
 		</div>
 	{/if}
 
 	{#if crew.length > 0}
 		<div class="mt-10">
-			<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Crew Credits</h2>
-			<MovieGrid movies={crew.slice(0, 36)} />
+			<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">{crewLabel}</h2>
+			<MovieGrid movies={crew} />
 		</div>
 	{/if}
 
-	{#if acting.length === 0 && crew.length === 0}
+	{#if primaryCredits.length === 0 && acting.length === 0 && crew.length === 0}
 		<p class="text-sm mt-10" style="color: var(--color-ink-400)">No credits found.</p>
 	{/if}
 </section>

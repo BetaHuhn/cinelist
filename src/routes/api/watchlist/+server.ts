@@ -13,7 +13,7 @@ export const GET: RequestHandler = async () => {
 }
 
 export const POST: RequestHandler = async ({ request }) => {
-	const body = (await request.json()) as Partial<Omit<WatchlistItem, 'addedAt' | 'onMediaServer'>>
+	const body = (await request.json()) as Partial<Omit<WatchlistItem, 'addedAt' | 'onMediaServer' | 'watched'>>
 	const mediaType = body.mediaType === 'tv' ? 'tv' : 'movie'
 	const id = typeof body.id === 'number' ? body.id : Number(body.id)
 	if (!Number.isFinite(id)) {

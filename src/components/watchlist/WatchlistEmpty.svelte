@@ -1,6 +1,8 @@
 <script lang="ts">
+	import type { WatchlistStatus } from '$lib/types/app'
+
 	interface Props {
-		filter?: string
+		filter?: WatchlistStatus
 	}
 	let { filter = 'all' }: Props = $props()
 </script>
@@ -8,10 +10,12 @@
 <div class="flex flex-col items-center justify-center py-24 gap-4 text-center">
 	<span class="text-6xl opacity-30">🎬</span>
 	<h3 class="text-xl font-semibold" style="color: var(--color-ink-300)">
-		{#if filter === 'on-server'}
-			Nothing on your media server yet
+		{#if filter === 'ready'}
+			Nothing ready to watch yet
 		{:else if filter === 'pending'}
-			Nothing pending — you're all caught up!
+			Nothing waiting to be added
+		{:else if filter === 'watched'}
+			Nothing watched yet
 		{:else}
 			Your watchlist is empty
 		{/if}
@@ -20,7 +24,7 @@
 		{#if filter === 'all'}
 			Browse trending movies and add them to your watchlist.
 		{:else}
-			Switch to the All tab to see your full watchlist.
+			Switch to the All tab to see your full library.
 		{/if}
 	</p>
 	{#if filter === 'all'}

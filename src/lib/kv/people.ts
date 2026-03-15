@@ -4,14 +4,30 @@ import type { FavoritePerson } from '$lib/types/app'
 const PREFIX = 'people'
 const key = (id: number) => `${PREFIX}:${id}`
 
+
+function toFiniteNumber(value: unknown): number | null {
+	const n = typeof value === 'number' ? value : Number(value)
+	return Number.isFinite(n) ? n : null
+}
+
 function normalize(person: FavoritePerson | null): FavoritePerson | null {
 	if (!person) return null
+
+	const id = toFiniteNumber((person as any).id)
+	if (!id || id <= 0) return null
+
+	const name = typeof (person as any).name === 'string' ? (person as any).name.trim() : ''
+	if (!name) return null
+
+	const addedAt = toFiniteNumber((person as any).addedAt) ?? 0
+
 	return {
-		id: person.id,
-		name: person.name,
-		profile_path: person.profile_path ?? null,
-		known_for_department: person.known_for_department ?? null,
-		addedAt: person.addedAt
+		id,
+		name,
+		profile_path: typeof (person as any).profile_path === 'string' ? (person as any).profile_path : null,
+		known_for_department:
+			typeof (person as any).known_for_department === 'string' ? (person as any).known_for_department : null,
+		addedAt
 	}
 }
 

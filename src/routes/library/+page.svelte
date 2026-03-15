@@ -5,19 +5,18 @@
 	import { favoritePeople, removePersonFromFavorites } from '$lib/stores/people'
 	import type { WatchlistStatus, WatchlistItem } from '$lib/types/app'
 	import type { PageData } from './$types'
-	import { posterUrl, profileUrl } from '$lib/utils/image'
-	import { formatYear } from '$lib/utils/format'
+	import { profileUrl } from '$lib/utils/image'
 	import { addToast } from '$lib/stores/ui'
-	import MediaServerBadge from '$components/watchlist/MediaServerBadge.svelte'
-	import WatchlistButton from '$components/watchlist/WatchlistButton.svelte'
 	import WatchlistEmpty from '$components/watchlist/WatchlistEmpty.svelte'
 	import Button from '$components/ui/Button.svelte'
+	import LibraryMediaCard from '$components/library/LibraryMediaCard.svelte'
+	import FeaturedCarousel from '$components/library/FeaturedCarousel.svelte'
 	import { openDetailPreview } from '$lib/utils/preview'
 	import { page } from '$app/state'
 
 	let { data }: { data: PageData } = $props()
 
-	let activeFilter = $state<WatchlistStatus>('pending')
+	let activeFilter = $state<WatchlistStatus>('ready')
 	let importing = $state(false)
 	let fileInput = $state<HTMLInputElement | null>(null)
 
@@ -29,6 +28,16 @@
 	let suppressClick = $state(false)
 	let pendingPreview: { mediaType: 'movie' | 'tv'; id: number } | null = $state(null)
 
+	let showAllPeople = $state(false)
+	let peopleCols = $state(1)
+
+	function computePeopleCols(width: number): number {
+		// Matches Tailwind breakpoints used by the grid: sm (640px), lg (1024px)
+		if (width >= 1024) return 3
+		if (width >= 640) return 2
+		return 1
+	}
+
 	onMount(() => {
 		if ($watchlist.length === 0 && data.items.length > 0) {
 			watchlist.set(data.items)
@@ -36,28 +45,68 @@
 		if ($favoritePeople.length === 0 && (data.people?.length ?? 0) > 0) {
 			favoritePeople.set(data.people)
 		}
+
+		peopleCols = computePeopleCols(window.innerWidth)
+		const onResize = () => {
+			peopleCols = computePeopleCols(window.innerWidth)
+		}
+		window.addEventListener('resize', onResize, { passive: true })
+		return () => window.removeEventListener('resize', onResize)
 	})
 
-	async function removeFavoritePerson(id: number) {
+	async function removeFavoritePerson(id: unknown) {
+		const safeId = typeof id === 'number' ? id : Number(id)
+		if (!Number.isFinite(safeId) || safeId <= 0) {
+			addToast('Invalid person id', 'error')
+			return
+		}
 		try {
-			await removePersonFromFavorites(id)
+			await removePersonFromFavorites(safeId)
 			addToast('Removed from favorites', 'success')
 		} catch {
 			addToast('Could not update favorites', 'error')
 		}
 	}
 
+	const safeFavoritePeople = $derived.by(() => {
+		return ($favoritePeople as any[])
+			.map((p) => {
+				const id = typeof p?.id === 'number' ? p.id : Number(p?.id)
+				return {
+					...(p ?? {}),
+					id
+				}
+			})
+			.filter((p) => Number.isFinite(p.id) && p.id > 0)
+	})
+
+	const maxCollapsedPeople = $derived.by(() => Math.max(0, peopleCols * 2))
+	const canExpandPeople = $derived.by(() => safeFavoritePeople.length > maxCollapsedPeople)
+	const visibleFavoritePeople = $derived.by(() =>
+		showAllPeople || !canExpandPeople
+			? safeFavoritePeople
+			: safeFavoritePeople.slice(0, maxCollapsedPeople)
+	)
+
 	const filtered = $derived.by(() => {
 		const items = $watchlist
-		if (activeFilter === 'on-server') return items.filter(i => i.onMediaServer)
-		if (activeFilter === 'pending') return items.filter(i => !i.onMediaServer)
+		if (activeFilter === 'ready') return items.filter(i => i.onMediaServer && !i.watched)
+		if (activeFilter === 'pending') return items.filter(i => !i.onMediaServer && !i.watched)
+		if (activeFilter === 'watched') return items.filter(i => i.watched)
 		return items
 	})
 
+	const readyCount = $derived.by(() => $watchlist.filter(i => i.onMediaServer && !i.watched).length)
+	const pendingCount = $derived.by(() => $watchlist.filter(i => !i.onMediaServer && !i.watched).length)
+	const watchedCount = $derived.by(() => $watchlist.filter(i => i.watched).length)
+
+	const featured = $derived.by(() => data.featured ?? [])
+
 	const tabs: { label: string; value: WatchlistStatus }[] = [
-		{ label: 'All', value: 'all' },
-		{ label: 'Pending', value: 'pending' },
-		{ label: 'Saved in Library', value: 'on-server' }
+		{ label: 'Ready to Watch', value: 'ready' },
+		{ label: 'Not in Library', value: 'pending' },
+		{ label: 'Watched', value: 'watched' },
+		{ label: 'All', value: 'all' }
 	]
 
 	function hrefFor(item: WatchlistItem) {
@@ -126,23 +175,6 @@
 		}
 	}
 
-	function asMedia(item: WatchlistItem) {
-		const base = {
-			id: item.id,
-			overview: '',
-			poster_path: item.poster_path,
-			backdrop_path: item.backdrop_path,
-			vote_average: item.vote_average,
-			vote_count: 0,
-			genre_ids: item.genre_ids,
-			popularity: 0,
-			original_language: 'en' as const
-		}
-		return item.mediaType === 'tv'
-			? { ...base, name: item.title, first_air_date: item.release_date }
-			: { ...base, title: item.title, release_date: item.release_date }
-	}
-
 	async function triggerImport() {
 		fileInput?.click()
 	}
@@ -184,14 +216,14 @@
 </script>
 
 <svelte:head>
-	<title>My Watchlist — CineList</title>
+	<title>My Library — CineList</title>
 </svelte:head>
 
 <div class="max-w-7xl mx-auto px-4 py-8" in:fade={{ duration: 200 }}>
 	<div class="flex items-center justify-between mb-6">
-		<h1 class="text-2xl font-bold" style="color: var(--color-ink-50)">My Watchlist</h1>
+		<h1 class="text-2xl font-bold" style="color: var(--color-ink-50)">My Library</h1>
 		<div class="flex items-center gap-3">
-				<span class="text-sm" style="color: var(--color-ink-500)">{$watchlist.length} items</span>
+			<span class="text-sm" style="color: var(--color-ink-500)">{$watchlist.length} items</span>
 			<Button variant="ghost" size="sm" loading={importing} onclick={triggerImport}>
 				Import CSV
 			</Button>
@@ -205,47 +237,34 @@
 		</div>
 	</div>
 
-	<!-- Filter tabs -->
-	<div class="flex gap-1 mb-8 p-1 rounded-xl w-fit" style="background: var(--color-surface-800)">
-		{#each tabs as tab (tab.value)}
-			<button
-				onclick={() => (activeFilter = tab.value)}
-				class="px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 ease-spring"
-				style={activeFilter === tab.value
-					? 'background: var(--color-surface-600); color: var(--color-ink-50)'
-					: 'color: var(--color-ink-500)'}
-			>
-				{tab.label}
-				{#if tab.value === 'all' && tab.value === activeFilter}
-					<span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="background: rgba(74,222,128,0.15); color: #4ade80">
-						{$watchlist.length}
-					</span>
-				{/if}
-				{#if tab.value === 'pending' && tab.value === activeFilter}
-					<span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="background: rgba(74,222,128,0.15); color: #4ade80">
-						{$watchlist.filter(i => !i.onMediaServer).length}
-					</span>
-				{/if}
-				{#if tab.value === 'on-server' && tab.value === activeFilter}
-					<span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="background: rgba(74,222,128,0.15); color: #4ade80">
-						{$watchlist.filter(i => i.onMediaServer).length}
-					</span>
-				{/if}
-			</button>
-		{/each}
-	</div>
+	{#if featured.length > 0}
+		<div class="mb-10">
+			<FeaturedCarousel items={featured} />
+		</div>
+	{/if}
 
-	{#if $favoritePeople.length > 0}
+	{#if safeFavoritePeople.length > 0}
 		<div class="mb-10">
 			<div class="flex items-center justify-between mb-4">
 				<h2 class="text-lg font-semibold" style="color: var(--color-ink-100)">Favorite People</h2>
-				<span class="text-sm" style="color: var(--color-ink-500)">{$favoritePeople.length}</span>
+				<div class="flex items-center gap-2">
+					<span class="text-sm" style="color: var(--color-ink-500)">{safeFavoritePeople.length}</span>
+					{#if canExpandPeople}
+						<Button
+							variant="ghost"
+							size="sm"
+							onclick={() => (showAllPeople = !showAllPeople)}
+						>
+							{showAllPeople ? 'View Less' : 'View All'}
+						</Button>
+					{/if}
+				</div>
 			</div>
 			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-				{#each $favoritePeople as person (person.id)}
+				{#each visibleFavoritePeople as person (person.id)}
 					<div class="flex items-center gap-4 rounded-xl p-4" style="background: var(--color-surface-800)">
 						<a href={`/person/${person.id}`} class="flex items-center gap-4 min-w-0 flex-1" style="color: inherit">
-							<div class="size-12 rounded-full overflow-hidden flex-shrink-0" style="background: var(--color-surface-700)">
+							<div class="size-12 rounded-full overflow-hidden shrink-0" style="background: var(--color-surface-700)">
 								<img
 									src={profileUrl(person.profile_path, 'w185')}
 									alt={person.name}
@@ -269,53 +288,47 @@
 		</div>
 	{/if}
 
+	<!-- Filter tabs -->
+	<div class="flex gap-1 mb-8 p-1 rounded-xl w-fit" style="background: var(--color-surface-800)">
+		{#each tabs as tab (tab.value)}
+			<button
+				onclick={() => (activeFilter = tab.value)}
+				class="px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 ease-spring"
+				style={activeFilter === tab.value
+					? 'background: var(--color-surface-600); color: var(--color-ink-50)'
+					: 'color: var(--color-ink-500)'}
+			>
+				{tab.label}
+				<!-- {#if tab.value === activeFilter}
+					<span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="background: rgba(74,222,128,0.15); color: #4ade80">
+						{#if tab.value === 'all'}
+							{$watchlist.length}
+						{:else if tab.value === 'ready'}
+							{readyCount}
+						{:else if tab.value === 'pending'}
+							{pendingCount}
+						{:else}
+							{watchedCount}
+						{/if}
+					</span>
+				{/if} -->
+			</button>
+		{/each}
+	</div>
+
 	{#if filtered.length === 0}
 		<WatchlistEmpty filter={activeFilter} />
 	{:else}
 		<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 			{#each filtered as item (item.mediaType + ':' + item.id)}
-				<a
-					href={hrefFor(item)}
-					onclick={(e) => handleClick(e, item.mediaType, item.id)}
-					onpointerdown={(e) => startHold(e, item.mediaType, item.id)}
-					onpointermove={moveHold}
-					onpointerup={endHold}
-					onpointercancel={endHold}
-					oncontextmenu={(e) => suppressClick && e.preventDefault()}
-					class="group flex gap-4 rounded-xl overflow-hidden transition-colors card-hover"
-					style="background: var(--color-surface-800)"
-				>
-					<!-- Poster -->
-					<div class="w-20 flex-shrink-0" style="background: var(--color-surface-700)">
-						<img
-							src={posterUrl(item.poster_path, 'w185')}
-							alt={item.title}
-							class="w-full h-full object-cover"
-							loading="lazy"
-						/>
-					</div>
-
-					<!-- Info -->
-					<div class="flex-1 py-3 pr-3 flex flex-col gap-2 min-w-0">
-						<div>
-							<p class="text-sm font-semibold leading-snug line-clamp-2" style="color: var(--color-ink-100)">{item.title}</p>
-							<p class="text-xs mt-0.5" style="color: var(--color-ink-500)">{formatYear(item.release_date)}</p>
-						</div>
-
-						<div class="flex items-center gap-2 flex-wrap">
-							<MediaServerBadge id={item.id} mediaType={item.mediaType} onMediaServer={item.onMediaServer} />
-						</div>
-
-						<div class="mt-auto flex items-center justify-between">
-							{#if item.vote_average > 0}
-								<span class="text-xs font-semibold" style="color: var(--color-amber-500)">★ {item.vote_average.toFixed(1)}</span>
-							{/if}
-							<div class="opacity-0 group-hover:opacity-100 transition-opacity">
-								<WatchlistButton media={asMedia(item)} size="sm" />
-							</div>
-						</div>
-					</div>
-				</a>
+				<LibraryMediaCard
+					{item}
+					{handleClick}
+					{startHold}
+					{moveHold}
+					{endHold}
+					suppressClick={suppressClick}
+				/>
 			{/each}
 		</div>
 	{/if}

@@ -13,6 +13,7 @@ export interface WatchlistItem {
 	genre_ids: number[]
 	addedAt: number
 	onMediaServer: boolean
+	watched: boolean
 }
 
 export interface FavoritePerson {
@@ -23,7 +24,7 @@ export interface FavoritePerson {
 	addedAt: number
 }
 
-export type WatchlistStatus = 'all' | 'pending' | 'on-server'
+export type WatchlistStatus = 'ready' | 'pending' | 'watched' | 'all'
 
 export interface AppRatings {
 	tmdb: number | null

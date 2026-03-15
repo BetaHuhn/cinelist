@@ -8,6 +8,11 @@
 	--color-surface-700: #161624;
 	--color-surface-600: #1e1e2e;
 	--color-surface-500: #2a2a3e;
+	--color-surface-400: #39394f;
+	--color-surface-300: #4a4a66;
+	--color-surface-200: #606075;
+	--color-surface-100: #808099;
+	--color-surface-50: #c0c0d8;
 
 	/* Amber */
 	--color-amber-500: #f59e0b;
@@ -96,12 +101,29 @@
 	}
 
 	.card-hover {
-		transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
+		transition: box-shadow 0.2s;
 	}
 
 	.card-hover:hover {
-		transform: scale(1.02);
 		box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.4);
+	}
+
+	.featured-card-hover {
+		transition: box-shadow 0.2s;
+	}
+
+	.featured-card-hover:hover {
+		box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.4);
+	}
+
+	.featured-card-hover .featured-bg {
+		transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+		transform-origin: center;
+		will-change: transform;
+	}
+
+	.featured-card-hover:hover .featured-bg {
+		transform: scale(1.04);
 	}
 
 	.btn-primary {

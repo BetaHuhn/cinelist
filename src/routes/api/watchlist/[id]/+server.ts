@@ -1,5 +1,5 @@
 import { json, error } from '@sveltejs/kit'
-import { removeItem, toggleMediaServer } from '$lib/kv/watchlist'
+import { removeItem, toggleMediaServer, toggleWatched } from '$lib/kv/watchlist'
 import { clearHomeRecommendationsCache } from '$lib/kv/recommendations'
 import type { RequestHandler } from './$types'
 
@@ -21,7 +21,10 @@ export const PATCH: RequestHandler = async ({ params, url }) => {
 	const id = parseInt(params.id, 10)
 	if (isNaN(id)) error(400, 'Invalid id')
 	const mediaType = getMediaType(url)
-	const updated = await toggleMediaServer(mediaType, id)
+	const toggle = (url.searchParams.get('toggle') ?? '').toLowerCase()
+	const updated = toggle === 'watched'
+		? await toggleWatched(mediaType, id)
+		: await toggleMediaServer(mediaType, id)
 	if (!updated) error(404, 'Item not found')
 	await clearHomeRecommendationsCache()
 	return json(updated)

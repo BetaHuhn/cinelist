@@ -195,6 +195,10 @@ export interface TMDBContentRatingsResponse {
 }
 
 export interface TMDBTVDetailResponse extends TMDBTV {
+	created_by?: Array<{
+		id: number
+		name: string
+	}>
 	credits: TMDBCredits
 	videos: TMDBVideosResponse
 	content_ratings: TMDBContentRatingsResponse
