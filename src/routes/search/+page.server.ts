@@ -7,8 +7,8 @@ export const load: PageServerLoad = async ({ url, fetch }) => {
 
 	try {
 		const [results, people] = await Promise.all([
-			searchMulti(q, { fetchFn: fetch }),
-			searchPeople(q, { fetchFn: fetch })
+			searchMulti(q, fetch),
+			searchPeople(q, fetch)
 		])
 		return { q, results, people }
 	} catch {

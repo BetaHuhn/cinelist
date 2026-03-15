@@ -24,10 +24,12 @@
 	out:fade={{ duration: 150 }}
 	onclick={onclose}
 >
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		role="dialog"
 		aria-modal="true"
-		aria-label="Trailer: {trailer.name}"
+		aria-label={trailer.name}
 		tabindex="-1"
 		class="relative w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl"
 		style="background: var(--color-surface-900)"
@@ -40,8 +42,8 @@
 				title={trailer.name}
 				class="w-full h-full"
 				allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-				allowfullscreen
 				sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+				allowfullscreen
 			></iframe>
 		</div>
 		<button

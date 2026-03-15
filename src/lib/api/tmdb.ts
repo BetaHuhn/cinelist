@@ -37,7 +37,7 @@ async function tmdbFetch<T>(
 	}
 	const res = await fetchFn(url.toString(), {
 		headers: {
-			'Authorization': `Bearer ${getApiKey()}`
+			'Authorization': `Bearer ${getApiKey()}`,
 		}
 	})
 	if (!res.ok) throw new Error(`TMDB ${path} failed: ${res.status}`)

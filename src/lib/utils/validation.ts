@@ -1,13 +1,9 @@
-/** Regex that matches TMDB image paths such as `/abc123.jpg`. */
-const PATH_RE = /^\/[a-zA-Z0-9/_.-]+$/
+/** Validates a TMDB image path (e.g. "/abc123.jpg"). Must start with / and contain only safe characters. */
+export function isValidTmdbPath(value: unknown): value is string {
+	return typeof value === 'string' && /^\/[a-zA-Z0-9/_.-]+$/.test(value)
+}
 
-/**
- * Returns true when `value` is either `null`/`undefined` (allowed as "no image")
- * or a string that looks like a valid TMDB image path.
- */
-export function isValidTmdbPath(value: unknown): value is string | null {
-	if (value === null || value === undefined) return true
-	if (typeof value !== 'string') return false
-	if (value === '') return true
-	return PATH_RE.test(value)
+/** Returns the string if it is within maxLen chars, otherwise null (signals invalid input). */
+export function maxLength(value: string, maxLen: number): string | null {
+	return value.length <= maxLen ? value : null
 }

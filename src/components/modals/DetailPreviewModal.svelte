@@ -73,13 +73,13 @@
 		;(async () => {
 			if (preview.mediaType === 'movie') {
 				const res = await fetch(`/api/detail/movie/${preview.id}`, { signal: ac.signal })
-				if (!res.ok) throw new Error(`Failed to load movie details`)
+				if (!res.ok) throw new Error(`Failed to load movie: ${res.status}`)
 				movie = (await res.json()) as MovieDetail
 				return
 			}
 
 			const res = await fetch(`/api/detail/tv/${preview.id}`, { signal: ac.signal })
-			if (!res.ok) throw new Error(`Failed to load TV details`)
+			if (!res.ok) throw new Error(`Failed to load TV show: ${res.status}`)
 			tv = (await res.json()) as TVDetail
 		})()
 			.catch((err: unknown) => {
@@ -109,6 +109,8 @@
 		out:fade={{ duration: 150 }}
 		onclick={close}
 	>
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
 			role="dialog"
 			aria-modal="true"

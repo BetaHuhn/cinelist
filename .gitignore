@@ -24,3 +24,6 @@ vite.config.ts.timestamp-*
 
 # Database files
 .data
+
+# npm lock file (project uses deno)
+package-lock.json
