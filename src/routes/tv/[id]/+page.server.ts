@@ -1,9 +1,9 @@
 import { fetchTVDetail, fetchTVRecommendations } from '$lib/api/tmdb'
 import { buildTVDetail } from '$lib/utils/format'
 import { error } from '@sveltejs/kit'
-import type { PageLoad } from './$types'
+import type { PageServerLoad } from './$types'
 
-export const load: PageLoad = async ({ params, fetch }) => {
+export const load: PageServerLoad = async ({ params, fetch }) => {
 	const id = parseInt(params.id, 10)
 	if (isNaN(id)) error(400, 'Invalid TV series ID')
 

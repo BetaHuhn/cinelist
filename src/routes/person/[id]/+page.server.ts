@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit'
-import type { PageLoad } from './$types'
+import type { PageServerLoad } from './$types'
 import {
 	fetchPersonCombinedCredits,
 	fetchPersonDetail
@@ -55,7 +55,7 @@ function normalizeCredits(list: TMDBPersonCombinedCredit[]): TMDBMedia[] {
 	return Array.from(map.values()).sort((a, b) => dateKey(b) - dateKey(a))
 }
 
-export const load: PageLoad = async ({ params, fetch }) => {
+export const load: PageServerLoad = async ({ params, fetch }) => {
 	const id = parseInt(params.id, 10)
 	if (isNaN(id)) error(400, 'Invalid person ID')
 

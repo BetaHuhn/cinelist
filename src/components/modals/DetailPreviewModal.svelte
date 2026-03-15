@@ -2,9 +2,6 @@
 	import { fade, scale } from 'svelte/transition'
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
-	import { fetchMovieDetail, fetchTVDetail } from '$lib/api/tmdb'
-	import { fetchOMDBByImdbId } from '$lib/api/omdb'
-	import { buildMovieDetail, buildTVDetail } from '$lib/utils/format'
 	import Spinner from '$components/ui/Spinner.svelte'
 	import MovieDetailView from '$components/detail/MovieDetailView.svelte'
 	import TVDetailView from '$components/detail/TVDetailView.svelte'
@@ -64,23 +61,19 @@
 		tv = null
 
 		const ac = new AbortController()
-		const fetchWithSignal: typeof fetch = (input, init) => {
-			return fetch(input, { ...(init ?? {}), signal: ac.signal })
-		}
 
 		const activeKey = key
 		;(async () => {
 			if (preview.mediaType === 'movie') {
-				const detail = await fetchMovieDetail(preview.id, fetchWithSignal)
-				const omdb = detail.imdb_id
-					? await fetchOMDBByImdbId(detail.imdb_id, fetchWithSignal).catch(() => null)
-					: null
-				movie = buildMovieDetail(detail, omdb)
+				const res = await fetch(`/api/detail/movie/${preview.id}`, { signal: ac.signal })
+				if (!res.ok) throw new Error(`Failed to load movie details`)
+				movie = (await res.json()) as MovieDetail
 				return
 			}
 
-			const detail = await fetchTVDetail(preview.id, fetchWithSignal)
-			tv = buildTVDetail(detail)
+			const res = await fetch(`/api/detail/tv/${preview.id}`, { signal: ac.signal })
+			if (!res.ok) throw new Error(`Failed to load TV details`)
+			tv = (await res.json()) as TVDetail
 		})()
 			.catch((err: unknown) => {
 				if (ac.signal.aborted) return

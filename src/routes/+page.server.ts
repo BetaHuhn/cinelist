@@ -1,8 +1,8 @@
 import { fetchTrending } from '$lib/api/tmdb'
 import type { TMDBMediaResult } from '$lib/types/tmdb'
-import type { PageLoad } from './$types'
+import type { PageServerLoad } from './$types'
 
-export const load: PageLoad = async ({ fetch }) => {
+export const load: PageServerLoad = async ({ fetch }) => {
 	const trendingPromise = fetchTrending(fetch)
 	const recommendedPromise = (async (): Promise<TMDBMediaResult[]> => {
 		try {

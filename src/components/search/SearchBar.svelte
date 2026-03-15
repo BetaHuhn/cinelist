@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
-	import { searchMulti, searchPeople } from '$lib/api/tmdb'
 	import type { TMDBMediaResult, TMDBPerson } from '$lib/types/tmdb'
 	import SearchResults from './SearchResults.svelte'
 
@@ -69,12 +68,11 @@
 		debounceTimer = setTimeout(async () => {
 			loading = true
 			try {
-				const [media, people] = await Promise.all([
-					searchMulti(query),
-					searchPeople(query)
-				])
-				mediaResults = media
-				peopleResults = people
+				const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
+				if (!res.ok) throw new Error('Search failed')
+				const data = (await res.json()) as { media: TMDBMediaResult[]; people: TMDBPerson[] }
+				mediaResults = data.media
+				peopleResults = data.people
 				open = mediaResults.length > 0 || peopleResults.length > 0
 			} catch {
 				mediaResults = []

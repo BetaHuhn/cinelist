@@ -1,10 +1,10 @@
-import { env } from '$env/dynamic/public'
+import { env } from '$env/dynamic/private'
 import type { OMDBResponse } from '$lib/types/omdb'
 
 const BASE = 'https://www.omdbapi.com'
 
 function getApiKey(): string {
-	return env.PUBLIC_OMDB_API_KEY ?? ''
+	return env.OMDB_API_KEY ?? ''
 }
 
 export async function fetchOMDBByImdbId(

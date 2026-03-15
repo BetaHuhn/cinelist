@@ -1,4 +1,4 @@
-import { env } from '$env/dynamic/public'
+import { env } from '$env/dynamic/private'
 import type {
 	TMDBMovieDetailResponse,
 	TMDBTVDetailResponse,
@@ -21,8 +21,8 @@ import type {
 const BASE = 'https://api.themoviedb.org/3'
 
 function getApiKey(): string {
-	const key = env.PUBLIC_TMDB_API_KEY
-	if (!key) throw new Error('PUBLIC_TMDB_API_KEY is not set')
+	const key = env.TMDB_API_KEY
+	if (!key) throw new Error('TMDB_API_KEY is not set')
 	return key
 }
 

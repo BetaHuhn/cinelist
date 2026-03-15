@@ -1,14 +1,14 @@
 import { searchMulti, searchPeople } from '$lib/api/tmdb'
-import type { PageLoad } from './$types'
+import type { PageServerLoad } from './$types'
 
-export const load: PageLoad = async ({ url, fetch }) => {
+export const load: PageServerLoad = async ({ url, fetch }) => {
 	const q = url.searchParams.get('q')?.trim() ?? ''
 	if (!q) return { q, results: [], people: [] }
 
 	try {
 		const [results, people] = await Promise.all([
-			searchMulti(q, fetch),
-			searchPeople(q, fetch)
+			searchMulti(q, { fetchFn: fetch }),
+			searchPeople(q, { fetchFn: fetch })
 		])
 		return { q, results, people }
 	} catch {
