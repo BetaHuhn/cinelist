@@ -2,32 +2,44 @@
 
 A lightweight, installable (PWA) movie & TV watchlist built with SvelteKit.
 
-- Discover what’s trending
-- Search movies & series
-- Open full detail pages (movie/TV)
-- Keep a persistent watchlist and mark items as “On Server”
-- Quickly preview details in a modal without leaving the grid/list
+- Discover trending and personalized recommendations
+- Search movies, TV shows, and people
+- Open rich detail pages for movies, TV, and people
+- Manage your library with watchlist, “saved in library”, and watched states
+- Quickly preview details in a modal without leaving the current grid/list
 
 ## Features
 
-- **Trending feed**: shows “Trending This Week” from TMDB.
-- **Search**: multi-search across movies and TV shows.
+- **Discover home**:
+	- “Trending Now” from TMDB.
+	- “Recommended for You” generated from your watchlist + favorite people.
+	- “From Your Watchlist” and “Ready in Your Library” preview rows.
+	- Featured carousel sourced from your own library items.
+- **Search**:
+	- Multi-search across movies and TV shows.
+	- Dedicated people results with direct links to person pages.
 - **Details**:
 	- Movie details load from TMDB with optional OMDb enrichment (ratings, etc.).
 	- TV details load from TMDB.
+	- Person pages include biography and curated credits.
 	- Trailer playback uses an embedded YouTube (nocookie) iframe.
-- **Watchlist**:
+- **Library / watchlist management**:
 	- Add/remove items with optimistic UI updates.
-	- Press & hold the watchlist button to **save + mark as saved in library** in one gesture.
-	- Toggle an **“On Server”** state (useful if you run a Plex/Jellyfin/etc. setup).
-	- Filter tabs: **All / Pending / Saved in Library**.
+	- Multi-state item workflow: **Watchlist / Saved in Library / Watched**.
+	- Press & hold the watchlist button for quick state transitions.
+	- Filter tabs: **Ready to Watch / Not in Library / Watched / All**.
+	- Favorite people list in library view.
+	- Persisted library card-size preference.
 - **Quick preview modal**:
 	- Opens a detail preview via client-side history state.
-	- Trigger it via **Shift+Click** on desktop or a short **press & hold** on touch.
+	- Trigger it via **Shift+Click** on desktop or a short **press & hold** on touch/pointer.
 	- Expand to the full detail route when needed.
 - **CSV import**:
 	- Upload a `.csv` to bulk-add movies.
 	- Rows are resolved to TMDB movies via TMDB links or a title search.
+- **Keyboard shortcuts**:
+	- `/` or `Ctrl/Cmd+K` to focus search.
+	- `g h`, `g l`, `g s` to navigate to Home, Library, and Search.
 - **PWA**:
 	- Generated service worker + manifest.
 	- Caches TMDB images and API responses for faster repeat usage.
@@ -46,10 +58,11 @@ A lightweight, installable (PWA) movie & TV watchlist built with SvelteKit.
 ### Routing & data fetching
 
 - Pages are standard SvelteKit routes:
-	- `/` trending + watchlist preview
-	- `/search` results via TMDB multi-search
+	- `/` discover (trending, featured, recommendations, library previews)
+	- `/search` results for movies/TV + people
+	- `/library` watchlist/library management + import
 	- `/movie/[id]` and `/tv/[id]` detail pages
-	- `/watchlist` watchlist management + import
+	- `/person/[id]` person details + credits
 
 - TMDB calls live in `src/lib/api/tmdb.ts`.
 - OMDb lookup (optional) lives in `src/lib/api/omdb.ts`.
@@ -60,8 +73,15 @@ A lightweight, installable (PWA) movie & TV watchlist built with SvelteKit.
 	- `GET /api/watchlist`
 	- `POST /api/watchlist`
 	- `DELETE /api/watchlist/[id]?type=movie|tv`
-	- `PATCH /api/watchlist/[id]?type=movie|tv` (toggle “On Server”)
+	- `PATCH /api/watchlist/[id]?type=movie|tv&toggle=server|watched`
 	- `POST /api/watchlist/import` (CSV import)
+	- `GET /api/featured?limit=8`
+	- `GET /api/recommendations?limit=24`
+	- `GET /api/people`
+	- `POST /api/people`
+	- `DELETE /api/people/[id]`
+	- `GET /api/config/[key]`
+	- `PUT /api/config/[key]`
 
 - Storage is configured in `storage.config.ts` via `unstorage`.
 	- Default backend: **Deno KV**, stored at `./.data/cinelist.kv`.
@@ -70,6 +90,8 @@ A lightweight, installable (PWA) movie & TV watchlist built with SvelteKit.
 ### Client state
 
 - The watchlist is mirrored in a Svelte store (`src/lib/stores/watchlist.ts`) and kept in sync via the API.
+- Favorite people are mirrored in `src/lib/stores/people.ts`.
+- Recommendation responses are cached server-side and invalidated on watchlist/people changes.
 
 ## Setup
 
@@ -108,10 +130,10 @@ This project targets **Deno** as the production runtime (via `svelte-adapter-den
 - **Frontend/dev server** (fast iteration):
 
 ```sh
-npm run dev
+deno run dev
 ```
 
-If you want watchlist persistence during development, ensure your storage backend is compatible with the runtime running your server routes.
+If you want watchlist/library persistence during development, ensure your storage backend is compatible with the runtime running your server routes.
 By default the project uses **Deno KV** (see `storage.config.ts`), which is intended for the Deno runtime.
 
 Alternative for Node-based dev: switch the storage driver in `storage.config.ts` to a Node-friendly backend (e.g. filesystem) while developing.
@@ -121,7 +143,7 @@ Alternative for Node-based dev: switch the storage driver in `storage.config.ts`
 Build a production bundle:
 
 ```sh
-npm run build
+deno run build
 ```
 
 Run the generated Deno server:
@@ -161,6 +183,7 @@ Notes:
 - `npm run build` – build production bundle
 - `npm run preview` – preview the production build (tooling preview)
 - `npm run check` – typecheck with Svelte
+- `npm run check:watch` – typecheck in watch mode
 
 Deno task equivalents (see `deno.json`):
 
