@@ -11,9 +11,10 @@
 	interface Props {
 		movie: TMDBMedia
 		index?: number
+		favoritePeople?: { id: number; name: string }[]
 	}
 
-	let { movie, index = 0 }: Props = $props()
+	let { movie, index = 0, favoritePeople }: Props = $props()
 	let imageLoaded = $state(false)
 
 	const mediaType = $derived.by((): 'movie' | 'tv' => {
@@ -149,6 +150,14 @@
 		{#if movie.vote_average > 0}
 			<div class="absolute top-2 left-2 text-xs font-bold px-2 py-0.5 rounded-lg" style="background: color-mix(in srgb, var(--color-surface-950) 80%, transparent); backdrop-filter: blur(4px); color: var(--color-amber-500)">
 				★ {movie.vote_average.toFixed(1)}
+			</div>
+		{/if}
+
+		<!-- Favorite person badge -->
+		{#if favoritePeople && favoritePeople.length > 0}
+			<div class="absolute bottom-2 left-2 right-2 text-xs font-medium px-2 py-0.5 rounded-lg flex items-center gap-1 truncate" style="background: color-mix(in srgb, var(--color-surface-950) 80%, transparent); backdrop-filter: blur(4px); color: var(--color-amber-400)">
+				<span>♥</span>
+				<span class="truncate">{favoritePeople[0].name}{favoritePeople.length > 1 ? ` +${favoritePeople.length - 1}` : ''}</span>
 			</div>
 		{/if}
 
