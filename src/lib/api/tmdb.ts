@@ -15,7 +15,8 @@ import type {
 	TMDBPersonExternalIdsResponse,
 	TMDBMovieKeywordsResponse,
 	TMDBTVKeywordsResponse,
-	TMDBKeyword
+	TMDBKeyword,
+	TMDBSeasonDetailResponse
 } from '$lib/types/tmdb'
 
 const BASE = 'https://api.themoviedb.org/3'
@@ -116,6 +117,18 @@ export function fetchTVDetail(id: number, fetchFn?: typeof fetch): Promise<TMDBT
 	return tmdbFetch<TMDBTVDetailResponse>(
 		`/tv/${id}`,
 		{ append_to_response: 'credits,videos,content_ratings' },
+		fetchFn
+	)
+}
+
+export function fetchTVSeasonDetail(
+	tvId: number,
+	seasonNumber: number,
+	fetchFn?: typeof fetch
+): Promise<TMDBSeasonDetailResponse> {
+	return tmdbFetch<TMDBSeasonDetailResponse>(
+		`/tv/${tvId}/season/${seasonNumber}`,
+		{},
 		fetchFn
 	)
 }
