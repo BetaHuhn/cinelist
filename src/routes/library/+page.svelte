@@ -351,36 +351,42 @@
 	{/if}
 
 	<!-- Filter tabs + card size selector -->
-	<div class="flex items-center justify-between gap-4 mb-8">
-		<div class="flex gap-1 p-1 rounded-xl w-fit" style="background: var(--color-surface-800)">
-			{#each tabs as tab (tab.value)}
-				<button
-					onclick={() => (activeFilter = tab.value)}
-					class="px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 ease-spring"
-					style={activeFilter === tab.value
-						? 'background: var(--color-surface-600); color: var(--color-ink-50)'
-						: 'color: var(--color-ink-500)'}
-				>
-					{tab.label}
-					<!-- {#if tab.value === activeFilter}
-						<span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="background: rgba(74,222,128,0.15); color: #4ade80">
-							{#if tab.value === 'all'}
-								{$watchlist.length}
-							{:else if tab.value === 'ready'}
-								{readyCount}
-							{:else if tab.value === 'pending'}
-								{pendingCount}
-							{:else}
-								{watchedCount}
-							{/if}
-						</span>
-					{/if} -->
-				</button>
-			{/each}
+	<div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+		<div class="w-full min-w-0 overflow-x-auto">
+			<div class="flex w-max gap-1 rounded-xl p-1" style="background: var(--color-surface-800)">
+				{#each tabs as tab (tab.value)}
+					<button
+						onclick={() => (activeFilter = tab.value)}
+						class="whitespace-nowrap px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 ease-spring"
+						style={activeFilter === tab.value
+							? 'background: var(--color-surface-600); color: var(--color-ink-50)'
+							: 'color: var(--color-ink-500)'}
+					>
+						{tab.label}
+						<!-- {#if tab.value === activeFilter}
+							<span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="background: rgba(74,222,128,0.15); color: #4ade80">
+								{#if tab.value === 'all'}
+									{$watchlist.length}
+								{:else if tab.value === 'ready'}
+									{readyCount}
+								{:else if tab.value === 'pending'}
+									{pendingCount}
+								{:else}
+									{watchedCount}
+								{/if}
+							</span>
+						{/if} -->
+					</button>
+				{/each}
+			</div>
 		</div>
 
-		<div class="flex items-center gap-2 ml-auto">
-			<label for="library-card-size" class="text-xs sm:text-sm" style="color: var(--color-ink-500)">
+		<div class="ml-auto flex items-center gap-2 self-end sm:self-auto">
+			<label
+				for="library-card-size"
+				class="whitespace-nowrap text-xs sm:text-sm"
+				style="color: var(--color-ink-500)"
+			>
 				Card size
 			</label>
 			<select

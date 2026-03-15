@@ -500,7 +500,7 @@
 			oncontextmenu={(e) => e.preventDefault()}
 			disabled={loading}
 			aria-label={label}
-			class="flex items-center justify-center rounded-full disabled:opacity-50 {hideLabel ? iconOnlySizes[size] : labelSizes[size]}"
+			class="flex items-center justify-center rounded-full select-none disabled:opacity-50 {hideLabel ? iconOnlySizes[size] : labelSizes[size]}"
 			style="background: transparent"
 		>
 			<span in:scale={{ duration: 300, easing: elasticOut }} style="color: {iconColor}">
