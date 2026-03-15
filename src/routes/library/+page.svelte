@@ -14,6 +14,7 @@
 	import LibraryMediaCard from '$components/library/LibraryMediaCard.svelte'
 	import FeaturedCarousel from '$components/library/FeaturedCarousel.svelte'
 	import MovieGrid from '$components/movie/MovieGrid.svelte'
+	import GraphView from '$components/library/GraphView.svelte'
 	import { openDetailPreview } from '$lib/utils/preview'
 	import { page } from '$app/state'
 
@@ -43,7 +44,7 @@
 	}
 
 	function isLibraryCardSize(value: unknown): value is LibraryCardSize {
-		return value === 'small' || value === 'medium'
+		return value === 'small' || value === 'medium' || value === 'graph'
 	}
 
 	async function loadLibraryCardSizeConfig() {
@@ -398,12 +399,15 @@
 			>
 				<option value="small">Small</option>
 				<option value="medium">Medium</option>
+				<option value="graph">Graph</option>
 			</select>
 		</div>
 	</div>
 
 	{#if filtered.length === 0}
 		<WatchlistEmpty filter={activeFilter} />
+	{:else if activeCardSize === 'graph'}
+		<GraphView items={filtered} />
 	{:else if activeCardSize === 'medium'}
 		<MovieGrid movies={filteredAsMedia} />
 	{:else if activeCardSize === 'small'}

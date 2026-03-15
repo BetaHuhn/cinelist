@@ -1,4 +1,4 @@
-export type LibraryCardSize = 'small' | 'medium'
+export type LibraryCardSize = 'small' | 'medium' | 'graph'
 
 export interface AppConfigSchema {
 	libraryCardSize: LibraryCardSize
