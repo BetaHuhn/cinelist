@@ -28,14 +28,14 @@
  * driver: mongodbDriver({ connectionString: 'mongodb://localhost', databaseName: 'cinelist' })
  */
 
-import { createStorage } from 'unstorage'
+import { createStorage, prefixStorage } from 'unstorage'
 import denoKvDriver from 'unstorage/drivers/deno-kv'
 
 const DB_PATH = './.data/cinelist.kv'
 const isDenoRuntime = typeof Deno !== 'undefined'
 const DENO_KV_HOST = isDenoRuntime ? Deno.env.get('DENO_KV_HOST') : undefined
 
-export const storage = createStorage({
+const storageInstance = createStorage({
 	driver: denoKvDriver({
 				path: DB_PATH,
 				openKv: async () => {
@@ -49,3 +49,5 @@ export const storage = createStorage({
 				}
 			})
 })
+
+export const storage = prefixStorage(storageInstance, "cinelist");
