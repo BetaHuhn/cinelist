@@ -1,5 +1,4 @@
 import { error, type Handle } from '@sveltejs/kit'
-import { dev } from '$app/environment'
 
 const SECURITY_HEADERS: Record<string, string> = {
 	'X-Frame-Options': 'DENY',
@@ -25,7 +24,6 @@ const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 export const handle: Handle = async ({ event, resolve }) => {
 	// CSRF protection: reject cross-origin mutating API requests.
 	if (
-		!dev &&
 		event.url.pathname.startsWith('/api/') &&
 		MUTATING_METHODS.has(event.request.method)
 	) {

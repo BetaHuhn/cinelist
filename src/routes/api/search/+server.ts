@@ -7,8 +7,8 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 	if (!q) return json({ results: [], people: [] })
 
 	const [results, people] = await Promise.all([
-		searchMulti(q, { fetchFn: fetch }).catch(() => []),
-		searchPeople(q, { fetchFn: fetch }).catch(() => [])
+		searchMulti(q, fetch).catch(() => []),
+		searchPeople(q, fetch).catch(() => [])
 	])
 
 	return json({ results, people })

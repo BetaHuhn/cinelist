@@ -92,7 +92,10 @@
 			loading = true
 			try {
 				const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}`)
-				const data = res.ok ? (await res.json() as { results: TMDBMediaResult[]; people: TMDBPerson[] }) : { results: [], people: [] }
+				const empty = { results: [] as TMDBMediaResult[], people: [] as TMDBPerson[] }
+				const data: { results: TMDBMediaResult[]; people: TMDBPerson[] } = res.ok
+					? await res.json()
+					: empty
 				mediaResults = data.results
 				peopleResults = data.people
 				open = mediaResults.length > 0 || peopleResults.length > 0
