@@ -156,6 +156,7 @@ Common runtime env vars for the server:
 
 - `HOST` (default `0.0.0.0`)
 - `PORT` (default `3000`)
+- `CSRF_ALLOWED_ORIGINS` (optional comma-separated allowlist of origins and/or hosts for mutating `/api/*` requests; when unset, CSRF origin checks are bypassed)
 
 If you keep secrets in a local `.env`, you may prefer Deno’s env-file support:
 
