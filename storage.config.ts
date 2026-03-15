@@ -30,15 +30,13 @@
 
 import { createStorage } from 'unstorage'
 import denoKvDriver from 'unstorage/drivers/deno-kv'
-import fsDriver from 'unstorage/drivers/fs'
 
 const DB_PATH = './.data/cinelist.kv'
 const isDenoRuntime = typeof Deno !== 'undefined'
 const DENO_KV_HOST = isDenoRuntime ? Deno.env.get('DENO_KV_HOST') : undefined
 
 export const storage = createStorage({
-	driver: isDenoRuntime
-		? denoKvDriver({
+	driver: denoKvDriver({
 				path: DB_PATH,
 				openKv: async () => {
 					if (DENO_KV_HOST) {
@@ -50,5 +48,4 @@ export const storage = createStorage({
 					return undefined
 				}
 			})
-		: fsDriver({ base: './.data' })
 })
