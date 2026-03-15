@@ -17,6 +17,15 @@
 
 	let { movie, related = [] }: Props = $props()
 	let showTrailer = $state(false)
+	let viewAllCast = $state(false)
+	let viewAllCrew = $state(false)
+
+	const crew = $derived(
+		movie.credits.crew
+			.filter(c => c.job === 'Director' || c.job === 'Producer' || c.job === 'Executive Producer' || c.job === 'Screenplay' || c.job === 'Writer' || c.job === 'Story')
+			.filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i)
+			.slice(0, viewAllCrew ? undefined : 6)
+	)
 
 	const directors = $derived(
 		movie.credits.crew
@@ -28,8 +37,16 @@
 			.filter(c => c.job === 'Producer' || c.job === 'Executive Producer')
 			.filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i)
 	)
-	const topCast = $derived(movie.credits.cast.slice(0, 12))
+	const cast = $derived(movie.credits.cast.slice(0, viewAllCast ? undefined : 12))
 	const relatedItems = $derived(related.filter(m => m.id !== movie.id).slice(0, 12))
+
+	function toggleViewAllCast() {
+		viewAllCast = !viewAllCast
+	}
+
+	function toggleViewAllCrew() {
+		viewAllCrew = !viewAllCrew
+	}
 </script>
 
 {#if showTrailer && movie.trailer}
@@ -132,11 +149,11 @@
 		{/if}
 
 		<!-- Cast -->
-		{#if topCast.length > 0}
+		{#if cast.length > 0}
 			<div class="mt-10">
 				<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Cast</h2>
 				<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-					{#each topCast as member, i (member.id + '-' + i)}
+					{#each cast as member, i (member.id + '-' + i)}
 						<a
 							href={`/person/${member.id}`}
 							class="flex flex-col items-center text-center gap-2"
@@ -157,45 +174,37 @@
 						</a>
 					{/each}
 				</div>
+				
+				<div class="mt-4 flex justify-center">
+					<button onclick={toggleViewAllCast} class="text-sm font-medium underline-offset-2 hover:underline" style="color: var(--color-ink-300)">
+						{viewAllCast ? 'View Less' : 'View All'}
+					</button>
+				</div>
 			</div>
 		{/if}
 
-		<!-- Directors / Producers -->
-		{#if directors.length > 0 || producers.length > 0}
+		{#if crew.length > 0}
 			<div class="mt-10">
 				<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Crew</h2>
-				{#if directors.length > 0}
-					<h3 class="text-sm font-semibold mb-3" style="color: var(--color-ink-300)">Directors</h3>
-					<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-						{#each directors.slice(0, 12) as member, i (member.id + '-' + i)}
-							<a href={`/person/${member.id}`} class="flex flex-col items-center text-center gap-2" style="color: inherit">
-								<div class="size-16 sm:size-20 rounded-full overflow-hidden flex-shrink-0" style="background: var(--color-surface-700)">
-									<img src={profileUrl(member.profile_path)} alt={member.name} class="w-full h-full object-cover" loading="lazy" />
-								</div>
-								<div>
-									<p class="text-xs font-semibold leading-tight" style="color: var(--color-ink-100)">{member.name}</p>
-									<p class="text-[11px] leading-tight mt-0.5 line-clamp-2" style="color: var(--color-ink-500)">{member.job}</p>
-								</div>
-							</a>
-						{/each}
-					</div>
-				{/if}
-				{#if producers.length > 0}
-					<h3 class="text-sm font-semibold mb-3 mt-6" style="color: var(--color-ink-300)">Producers</h3>
-					<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-						{#each producers.slice(0, 12) as member, i (member.id + '-' + i)}
-							<a href={`/person/${member.id}`} class="flex flex-col items-center text-center gap-2" style="color: inherit">
-								<div class="size-16 sm:size-20 rounded-full overflow-hidden flex-shrink-0" style="background: var(--color-surface-700)">
-									<img src={profileUrl(member.profile_path)} alt={member.name} class="w-full h-full object-cover" loading="lazy" />
-								</div>
-								<div>
-									<p class="text-xs font-semibold leading-tight" style="color: var(--color-ink-100)">{member.name}</p>
-									<p class="text-[11px] leading-tight mt-0.5 line-clamp-2" style="color: var(--color-ink-500)">{member.job}</p>
-								</div>
-							</a>
-						{/each}
-					</div>
-				{/if}
+				<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+					{#each crew as member, i (member.id + '-' + i)}
+						<a href={`/person/${member.id}`} class="flex flex-col items-center text-center gap-2" style="color: inherit">
+							<div class="size-16 sm:size-20 rounded-full overflow-hidden flex-shrink-0" style="background: var(--color-surface-700)">
+								<img src={profileUrl(member.profile_path)} alt={member.name} class="w-full h-full object-cover" loading="lazy" />
+							</div>
+							<div>
+								<p class="text-xs font-semibold leading-tight" style="color: var(--color-ink-100)">{member.name}</p>
+								<p class="text-[11px] leading-tight mt-0.5 line-clamp-2" style="color: var(--color-ink-500)">{member.job}</p>
+							</div>
+						</a>
+					{/each}
+				</div>
+				
+				<div class="mt-4 flex justify-center">
+					<button onclick={toggleViewAllCrew} class="text-sm font-medium underline-offset-2 hover:underline" style="color: var(--color-ink-300)">
+						{viewAllCrew ? 'View Less' : 'View All'}
+					</button>
+				</div>
 			</div>
 		{/if}
 

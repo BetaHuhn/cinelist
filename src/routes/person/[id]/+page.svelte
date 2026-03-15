@@ -74,14 +74,14 @@
 	{#if acting.length > 0}
 		<div class="mt-10">
 			<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Acting Credits</h2>
-			<MovieGrid movies={acting.slice(0, 36)} />
+			<MovieGrid movies={acting} />
 		</div>
 	{/if}
 
 	{#if crew.length > 0}
 		<div class="mt-10">
 			<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Crew Credits</h2>
-			<MovieGrid movies={crew.slice(0, 36)} />
+			<MovieGrid movies={crew} />
 		</div>
 	{/if}
 
