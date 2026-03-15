@@ -11,7 +11,7 @@
 </script>
 
 {#key pathname}
-	<div in:fade={{ duration: 200 }} out:fade={{ duration: 150 }}>
+	<div in:fade={{ duration: 120 }}>
 		{@render children?.()}
 	</div>
 {/key}
