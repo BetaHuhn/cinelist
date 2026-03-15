@@ -3,6 +3,7 @@
 	import { page } from '$app/state'
 	import { watchlist } from '$lib/stores/watchlist'
 	import SearchBar from '$components/search/SearchBar.svelte'
+	import NavigationTrail from '$components/layout/NavigationTrail.svelte'
 
 	const navLinks = [
 		{ href: '/', label: 'Discover' },
@@ -73,6 +74,8 @@
 	<div class="sm:hidden px-4 pb-3">
 		<SearchBar resetOnLeaveSearch />
 	</div>
+
+	<NavigationTrail />
 </header>
 
 <style>

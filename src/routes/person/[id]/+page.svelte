@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte'
 	import { fade } from 'svelte/transition'
 	import { profileUrl } from '$lib/utils/image'
 	import MovieGrid from '$components/movie/MovieGrid.svelte'
@@ -6,6 +7,7 @@
 	import { addToast } from '$lib/stores/ui'
 	import { favoritePeople } from '$lib/stores/people'
 	import { toggleFavoritePerson } from '$lib/stores/people'
+	import { navHistory } from '$lib/stores/navigationHistory'
 	import type { PageData } from './$types'
 
 	let { data }: { data: PageData } = $props()
@@ -20,6 +22,16 @@
 	const isFav = $derived($favoritePeople.some(p => p.id === person.id))
 	let saving = $state(false)
 	let showMore = $state(false)
+
+	onMount(() => {
+		navHistory.push({
+			type: 'person',
+			id: person.id,
+			title: person.name,
+			posterPath: person.profile_path ?? null,
+			href: `/person/${person.id}`
+		})
+	})
 
 	async function toggle() {
 		const wasFav = isFav
