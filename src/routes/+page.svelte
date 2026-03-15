@@ -76,6 +76,26 @@
 	</div>
 </section>
 
+{#if data.recommended?.length > 0}
+	<!-- Personalized Recommendations Section -->
+	<section class="max-w-7xl mx-auto px-4 py-10">
+		<div class="mb-6">
+			<h2 class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Recommended for You</h2>
+			<p class="text-sm mb-4" style="color: var(--color-ink-300)">Based on your watchlist and ratings</p>
+		</div>
+		<MovieGrid movies={data.recommended} />
+	</section>
+{/if}
+
+<!-- Trending Section -->
+<section class="max-w-7xl mx-auto px-4 py-10">
+	<div class="mb-6">
+		<h2 class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Trending Now</h2>
+		<p class="text-sm mb-4" style="color: var(--color-ink-300)">What's popular this week</p>
+	</div>
+	<MovieGrid movies={data.trending} />
+</section>
+
 {#if watchlistPreview.length > 0}
 	<!-- Watchlist Preview Section -->
 	<section class="max-w-7xl mx-auto px-4 py-10">
@@ -91,17 +111,3 @@
 		<MovieGrid movies={libraryPreview} />
 	</section>
 {/if}
-
-{#if data.recommended?.length > 0}
-	<!-- Personalized Recommendations Section -->
-	<section class="max-w-7xl mx-auto px-4 py-10">
-		<h2 class="text-xl font-bold mb-6" style="color: var(--color-ink-50)">Recommended for You</h2>
-		<MovieGrid movies={data.recommended} />
-	</section>
-{/if}
-
-<!-- Trending Section -->
-<section class="max-w-7xl mx-auto px-4 py-10">
-	<h2 class="text-xl font-bold mb-6" style="color: var(--color-ink-50)">Trending This Week</h2>
-	<MovieGrid movies={data.trending} />
-</section>

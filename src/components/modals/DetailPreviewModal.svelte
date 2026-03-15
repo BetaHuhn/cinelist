@@ -5,6 +5,7 @@
 	import { fetchMovieDetail, fetchTVDetail } from '$lib/api/tmdb'
 	import { fetchOMDBByImdbId } from '$lib/api/omdb'
 	import { buildMovieDetail, buildTVDetail } from '$lib/utils/format'
+	import { isEditableTarget } from '$lib/utils/keyboard'
 	import Spinner from '$components/ui/Spinner.svelte'
 	import MovieDetailView from '$components/detail/MovieDetailView.svelte'
 	import TVDetailView from '$components/detail/TVDetailView.svelte'
@@ -41,7 +42,13 @@
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (!open) return
+		if (e.repeat) return
+		if (isEditableTarget(e.target)) return
 		if (e.key === 'Escape') close()
+		if (e.key === 'Enter' || e.key.toLowerCase() === 'o') {
+			e.preventDefault()
+			void expand()
+		}
 	}
 
 	$effect(() => {

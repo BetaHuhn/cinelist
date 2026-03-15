@@ -1,6 +1,8 @@
 <script lang="ts">
 	import '../app.css'
 	import { onMount } from 'svelte'
+	import { goto } from '$app/navigation'
+	import { isEditableTarget } from '$lib/utils/keyboard'
 	import NavBar from '$components/layout/NavBar.svelte'
 	import BottomNav from '$components/layout/BottomNav.svelte'
 	import PageTransition from '$components/layout/PageTransition.svelte'
@@ -18,6 +20,76 @@
 		const { registerSW } = await import('virtual:pwa-register')
 		registerSW({ immediate: true })
 	})
+
+	let pendingG = $state(false)
+	let pendingGTimer: ReturnType<typeof setTimeout> | null = null
+
+	function clearPendingG() {
+		pendingG = false
+		if (pendingGTimer) {
+			clearTimeout(pendingGTimer)
+			pendingGTimer = null
+		}
+	}
+
+	function focusSearch() {
+		window.dispatchEvent(new CustomEvent('cinelist:focus-search'))
+	}
+
+	function handleGlobalKeydown(e: KeyboardEvent) {
+		if (e.defaultPrevented) return
+		if (isEditableTarget(e.target)) return
+
+		// Search focus
+		if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+			e.preventDefault()
+			clearPendingG()
+			focusSearch()
+			return
+		}
+		if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey) && !e.altKey) {
+			e.preventDefault()
+			clearPendingG()
+			focusSearch()
+			return
+		}
+
+		// Navigation sequences (GitHub-style)
+		if (pendingG) {
+			const k = e.key.toLowerCase()
+			if (k === 'h') {
+				e.preventDefault()
+				clearPendingG()
+				void goto('/')
+				return
+			}
+			if (k === 'w') {
+				e.preventDefault()
+				clearPendingG()
+				void goto('/watchlist')
+				return
+			}
+			if (k === 's') {
+				e.preventDefault()
+				clearPendingG()
+				void goto('/search')
+				return
+			}
+			clearPendingG()
+			return
+		}
+
+		if (e.key === 'g' || e.key === 'G') {
+			if (e.metaKey || e.ctrlKey || e.altKey) return
+			pendingG = true
+			if (pendingGTimer) clearTimeout(pendingGTimer)
+			pendingGTimer = setTimeout(() => {
+				pendingG = false
+				pendingGTimer = null
+			}, 900)
+			return
+		}
+	}
 </script>
 
 <svelte:head>
@@ -34,6 +106,8 @@
 	</main>
 	<BottomNav />
 </div>
+
+<svelte:window onkeydown={handleGlobalKeydown} />
 
 <Toast />
 

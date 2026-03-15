@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { onMount } from 'svelte'
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
 	import { searchMulti, searchPeople } from '$lib/api/tmdb'
+	import { openDetailPreview } from '$lib/utils/preview'
 	import type { TMDBMediaResult, TMDBPerson } from '$lib/types/tmdb'
 	import SearchResults from './SearchResults.svelte'
 
@@ -22,6 +24,26 @@
 	let debounceTimer: ReturnType<typeof setTimeout>
 	let prevPath = $state<string | null>(null)
 	let prevUrlQ = $state<string | null>(null)
+	let inputEl = $state<HTMLInputElement | null>(null)
+	let selectedIndex = $state(-1)
+
+	const MAX_MEDIA = 8
+	const MAX_PEOPLE = 4
+
+	function topMedia(): TMDBMediaResult[] {
+		return mediaResults.slice(0, MAX_MEDIA)
+	}
+	function topPeople(): TMDBPerson[] {
+		return peopleResults.slice(0, MAX_PEOPLE)
+	}
+	function suggestionCount(): number {
+		return topMedia().length + topPeople().length
+	}
+
+	function fromPath(): string {
+		return (page.state as App.PageState | undefined)?.preview?.from
+			?? `${page.url.pathname}${page.url.search}${page.url.hash}`
+	}
 
 	$effect(() => {
 		const currentPath = page.url.pathname
@@ -64,6 +86,7 @@
 			mediaResults = []
 			peopleResults = []
 			open = false
+			selectedIndex = -1
 			return
 		}
 		debounceTimer = setTimeout(async () => {
@@ -76,9 +99,11 @@
 				mediaResults = media
 				peopleResults = people
 				open = mediaResults.length > 0 || peopleResults.length > 0
+				selectedIndex = -1
 			} catch {
 				mediaResults = []
 				peopleResults = []
+				selectedIndex = -1
 			} finally {
 				loading = false
 			}
@@ -89,6 +114,7 @@
 		open = false
 		mediaResults = []
 		peopleResults = []
+		selectedIndex = -1
 		if (opts.clearQuery ?? true) query = ''
 	}
 
@@ -98,6 +124,7 @@
 		open = false
 		mediaResults = []
 		peopleResults = []
+		selectedIndex = -1
 		await goto(`/search?q=${encodeURIComponent(q)}`)
 	}
 
@@ -106,11 +133,75 @@
 	}
 
 	function handleInputKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			close({ clearQuery: true })
+			return
+		}
+
+		if (!open || !focused) {
+			if (e.key === 'Enter') {
+				e.preventDefault()
+				submit()
+			}
+			return
+		}
+
+		const count = suggestionCount()
+		if (count > 0 && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+			e.preventDefault()
+			const delta = e.key === 'ArrowDown' ? 1 : -1
+			selectedIndex = selectedIndex < 0
+				? (delta > 0 ? 0 : count - 1)
+				: (selectedIndex + delta + count) % count
+			return
+		}
+
 		if (e.key === 'Enter') {
 			e.preventDefault()
-			submit()
+			if (selectedIndex < 0) {
+				submit()
+				return
+			}
+
+			const media = topMedia()
+			const people = topPeople()
+			if (selectedIndex < media.length) {
+				const item = media[selectedIndex]
+				const mediaType = item.media_type
+				close({ clearQuery: true })
+				if (e.shiftKey) {
+					openDetailPreview({ mediaType, id: item.id, fromUrl: page.url, fromOverride: fromPath() })
+					return
+				}
+				void goto(mediaType === 'tv' ? `/tv/${item.id}` : `/movie/${item.id}`)
+				return
+			}
+
+			const personIndex = selectedIndex - media.length
+			const person = people[personIndex]
+			if (!person) return
+			close({ clearQuery: true })
+			void goto(`/person/${person.id}`)
+			return
 		}
 	}
+
+	function handleFocusSearchEvent() {
+		if (!inputEl) return
+		if (inputEl.getClientRects().length === 0) return
+		inputEl.focus()
+		try {
+			inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length)
+		} catch {
+			// ignore
+		}
+	}
+
+	onMount(() => {
+		const handler: EventListener = () => handleFocusSearchEvent()
+		window.addEventListener('cinelist:focus-search', handler)
+		return () => window.removeEventListener('cinelist:focus-search', handler)
+	})
 
 	function handleSubmit(e: SubmitEvent) {
 		e.preventDefault()
@@ -140,6 +231,7 @@
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
 		</svg>
 		<input
+			bind:this={inputEl}
 			bind:value={query}
 			oninput={handleInput}
 			onkeydown={handleInputKeydown}
@@ -164,7 +256,7 @@
 	</form>
 
 	{#if open && focused}
-		<SearchResults {mediaResults} {peopleResults} onclose={() => close({ clearQuery: true })} />
+		<SearchResults {mediaResults} {peopleResults} {selectedIndex} onclose={() => close({ clearQuery: true })} />
 	{/if}
 
 	{#if open && focused}

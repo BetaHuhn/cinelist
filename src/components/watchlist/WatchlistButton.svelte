@@ -98,11 +98,11 @@
 		if (!pointerDown) return
 		const completed = progress >= 0.99
 		abort()
-		if (!completed) await handleShortPress(e)
+		e.stopPropagation()
+		if (!completed) await handleShortPress()
 	}
 
-	async function handleShortPress(e: PointerEvent) {
-		e.stopPropagation()
+	async function handleShortPress() {
 		if (loading) return
 		loading = true
 		try {
@@ -133,6 +133,42 @@
 		} finally {
 			loading = false
 		}
+	}
+
+	// Imperative API for keyboard shortcuts (bind:this on the component)
+	export function keyboardPressStart(): void {
+		if (loading) return
+		if (pointerDown) return
+		pointerDown = true
+		showingHold = false
+		progress = 0
+		pressStart = Date.now()
+		rafId = requestAnimationFrame(raf)
+		showHoldTimer = setTimeout(() => {
+			if (pointerDown && !loading) showingHold = true
+		}, SHOW_HOLD_AFTER_MS)
+		pressTimer = setTimeout(async () => {
+			pointerDown = false
+			showingHold = false
+			if (rafId) { cancelAnimationFrame(rafId); rafId = null }
+			if (showHoldTimer) { clearTimeout(showHoldTimer); showHoldTimer = null }
+			pressTimer = null
+			progress = 1
+			await handleLongPress()
+			setTimeout(() => { progress = 0 }, 400)
+		}, HOLD_MS)
+	}
+
+	export async function keyboardPressEnd(): Promise<void> {
+		// If long-press already fired, `pointerDown` is false.
+		if (!pointerDown) return
+		const completed = progress >= 0.99
+		abort()
+		if (!completed) await handleShortPress()
+	}
+
+	export function keyboardPressAbort(): void {
+		abort()
 	}
 </script>
 
