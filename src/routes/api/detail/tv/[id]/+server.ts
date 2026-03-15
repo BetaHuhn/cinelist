@@ -1,9 +1,9 @@
+import { json, error } from '@sveltejs/kit'
+import type { RequestHandler } from './$types'
 import { fetchTVDetail, fetchTVRecommendations } from '$lib/api/tmdb'
 import { buildTVDetail } from '$lib/utils/format'
-import { error } from '@sveltejs/kit'
-import type { PageLoad } from './$types'
 
-export const load: PageLoad = async ({ params, fetch }) => {
+export const GET: RequestHandler = async ({ params, fetch }) => {
 	const id = parseInt(params.id, 10)
 	if (isNaN(id)) error(400, 'Invalid TV series ID')
 
@@ -12,5 +12,5 @@ export const load: PageLoad = async ({ params, fetch }) => {
 		fetchTVRecommendations(id, fetch).catch(() => [])
 	])
 	const tv = buildTVDetail(detail)
-	return { tv, related }
+	return json({ tv, related })
 }

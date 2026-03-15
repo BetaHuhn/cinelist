@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit'
-import type { PageLoad } from './$types'
+import type { PageServerLoad } from './$types'
 import {
 	fetchPersonCombinedCredits,
 	fetchPersonDetail
@@ -129,7 +129,7 @@ function filterOut(list: TMDBMedia[], exclude: Set<string>): TMDBMedia[] {
 	return list.filter((m) => !exclude.has(mediaKey(m)))
 }
 
-export const load: PageLoad = async ({ params, fetch }) => {
+export const load: PageServerLoad = async ({ params, fetch }) => {
 	const id = parseInt(params.id, 10)
 	if (isNaN(id)) error(400, 'Invalid person ID')
 

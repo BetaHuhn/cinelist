@@ -179,7 +179,7 @@ function normalizeTitle(s: string): string {
 function extractTmdbIdFromLink(link: string): number | null {
 	try {
 		const url = new URL(link)
-		if (!/themoviedb\.org$/i.test(url.hostname) && !/www\.themoviedb\.org$/i.test(url.hostname)) return null
+		if (url.hostname !== 'themoviedb.org' && url.hostname !== 'www.themoviedb.org') return null
 		const match = url.pathname.match(/\/movie\/(\d+)/)
 		if (!match) return null
 		const id = parseInt(match[1], 10)

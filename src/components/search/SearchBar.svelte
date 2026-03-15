@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte'
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
-	import { searchMulti, searchPeople } from '$lib/api/tmdb'
 	import { openDetailPreview } from '$lib/utils/preview'
 	import type { TMDBMediaResult, TMDBPerson } from '$lib/types/tmdb'
 	import SearchResults from './SearchResults.svelte'
@@ -92,12 +91,10 @@
 		debounceTimer = setTimeout(async () => {
 			loading = true
 			try {
-				const [media, people] = await Promise.all([
-					searchMulti(query),
-					searchPeople(query)
-				])
-				mediaResults = media
-				peopleResults = people
+				const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}`)
+				const data = res.ok ? (await res.json() as { results: TMDBMediaResult[]; people: TMDBPerson[] }) : { results: [], people: [] }
+				mediaResults = data.results
+				peopleResults = data.people
 				open = mediaResults.length > 0 || peopleResults.length > 0
 				selectedIndex = -1
 			} catch {
