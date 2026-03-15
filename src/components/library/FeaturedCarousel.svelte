@@ -89,7 +89,7 @@
 <div class="flex items-center justify-between mb-4">
 	<div>
 		<h2 class="text-lg font-semibold" style="color: var(--color-ink-100)">Featured</h2>
-		<p class="text-sm" style="color: var(--color-ink-500)">Picked from your recommendations • Ready first, then not in library</p>
+		<p class="text-sm" style="color: var(--color-ink-500)">Picked from your library</p>
 	</div>
 	<span class="text-sm" style="color: var(--color-ink-500)">{items.length}</span>
 </div>
