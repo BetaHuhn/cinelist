@@ -149,7 +149,7 @@ deno run build
 Run the generated Deno server:
 
 ```sh
-deno run -A build/index.js
+deno run -A --unstable-kv build/index.js
 ```
 
 Common runtime env vars for the server:
@@ -160,7 +160,7 @@ Common runtime env vars for the server:
 If you keep secrets in a local `.env`, you may prefer Deno’s env-file support:
 
 ```sh
-deno run -A --env-file=.env build/index.js
+deno run -A --unstable-kv --env-file=.env build/index.js
 ```
 
 ## Build & Run (Docker)

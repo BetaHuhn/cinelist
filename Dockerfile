@@ -22,4 +22,4 @@ RUN mkdir -p .data
 
 EXPOSE 8000
 
-CMD ["deno", "run", "-A", "build/index.js"]
+CMD ["deno", "run", "-A", "--unstable-kv", "build/index.js"]
