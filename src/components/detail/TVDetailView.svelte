@@ -10,16 +10,19 @@
 	import TrailerButton from '$components/movie/TrailerButton.svelte'
 	import TrailerModal from '$components/modals/TrailerModal.svelte'
 	import Badge from '$components/ui/Badge.svelte'
+	import MoreMenu from '$components/detail/MoreMenu.svelte'
 	import { createDetailHotkeys, type WatchlistButtonHandle } from '$lib/utils/detailHotkeys'
-	import type { TVDetail } from '$lib/types/app'
+	import { blacklist, filterBlacklisted } from '$lib/stores/blacklist'
+	import type { TVDetail, FavoritePeopleByMedia } from '$lib/types/app'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 
 	interface Props {
 		tv: TVDetail
 		related?: TMDBMedia[]
+		favoritePeopleByMedia?: FavoritePeopleByMedia
 	}
 
-	let { tv, related = [] }: Props = $props()
+	let { tv, related = [], favoritePeopleByMedia }: Props = $props()
 	let showTrailer = $state(false)
 	let watchlistButton: WatchlistButtonHandle | null = null
 
@@ -49,7 +52,7 @@
 	)
 	const runtime = $derived(tv.episode_run_time?.[0] ?? null)
 	const seasons = $derived((tv.seasons ?? []).filter(s => s.season_number !== 0))
-	const relatedItems = $derived(related.filter(m => m.id !== tv.id).slice(0, 12))
+	const relatedItems = $derived(filterBlacklisted(related.filter(m => m.id !== tv.id), () => 'tv', $blacklist).slice(0, 12))
 </script>
 
 <svelte:window onkeydown={hotkeys.handleKeydown} onkeyup={hotkeys.handleKeyup} onblur={hotkeys.handleWindowBlur} />
@@ -97,6 +100,7 @@
 				{#if tv.trailer}
 					<TrailerButton trailer={tv.trailer} onclick={() => (showTrailer = true)} />
 				{/if}
+				<MoreMenu id={tv.id} mediaType="tv" title={tv.name} poster_path={tv.poster_path} />
 			</div>
 
 			{#if directors.length > 0}
@@ -137,7 +141,7 @@
 				<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Seasons</h2>
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					{#each seasons as season (season.id)}
-						<div class="flex gap-4 rounded-xl overflow-hidden" style="background: var(--color-surface-800)">
+						<a href="/tv/{tv.id}/season/{season.season_number}" class="flex gap-4 rounded-xl overflow-hidden hover:opacity-80 transition-opacity" style="background: var(--color-surface-800)">
 							<!-- Poster -->
 							<div class="w-20 shrink-0" style="background: var(--color-surface-700)">
 								<img
@@ -166,7 +170,7 @@
 									<p class="text-xs mt-1 line-clamp-2" style="color: var(--color-ink-300)">{season.overview}</p>
 								{/if}
 							</div>
-						</div>
+						</a>
 					{/each}
 				</div>
 			</div>
@@ -179,7 +183,7 @@
 		{#if relatedItems.length > 0}
 			<div class="mt-10">
 				<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Related</h2>
-				<MovieGrid movies={relatedItems} />
+				<MovieGrid movies={relatedItems} {favoritePeopleByMedia} />
 			</div>
 		{/if}
 	</DetailLayout>

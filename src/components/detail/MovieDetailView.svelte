@@ -8,16 +8,19 @@
 	import WatchlistButton from '$components/watchlist/WatchlistButton.svelte'
 	import TrailerButton from '$components/movie/TrailerButton.svelte'
 	import TrailerModal from '$components/modals/TrailerModal.svelte'
+	import MoreMenu from '$components/detail/MoreMenu.svelte'
 	import { createDetailHotkeys, type WatchlistButtonHandle } from '$lib/utils/detailHotkeys'
-	import type { MovieDetail } from '$lib/types/app'
+	import { blacklist, filterBlacklisted } from '$lib/stores/blacklist'
+	import type { MovieDetail, FavoritePeopleByMedia } from '$lib/types/app'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 
 	interface Props {
 		movie: MovieDetail
 		related?: TMDBMedia[]
+		favoritePeopleByMedia?: FavoritePeopleByMedia
 	}
 
-	let { movie, related = [] }: Props = $props()
+	let { movie, related = [], favoritePeopleByMedia }: Props = $props()
 	let showTrailer = $state(false)
 	let watchlistButton: WatchlistButtonHandle | null = null
 
@@ -45,7 +48,7 @@
 			.filter(c => c.job === 'Producer' || c.job === 'Executive Producer')
 			.filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i)
 	)
-	const relatedItems = $derived(related.filter(m => m.id !== movie.id).slice(0, 12))
+	const relatedItems = $derived(filterBlacklisted(related.filter(m => m.id !== movie.id), () => 'movie', $blacklist).slice(0, 12))
 </script>
 
 <svelte:window onkeydown={hotkeys.handleKeydown} onkeyup={hotkeys.handleKeyup} onblur={hotkeys.handleWindowBlur} />
@@ -78,6 +81,7 @@
 				{#if movie.trailer}
 					<TrailerButton trailer={movie.trailer} onclick={() => (showTrailer = true)} />
 				{/if}
+				<MoreMenu id={movie.id} mediaType="movie" title={movie.title} poster_path={movie.poster_path} />
 			</div>
 
 			{#if directors.length > 0}
@@ -119,7 +123,7 @@
 		{#if relatedItems.length > 0}
 			<div class="mt-10">
 				<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Related</h2>
-				<MovieGrid movies={relatedItems} />
+				<MovieGrid movies={relatedItems} {favoritePeopleByMedia} />
 			</div>
 		{/if}
 	</DetailLayout>

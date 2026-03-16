@@ -52,8 +52,19 @@ export interface TVDetail extends TMDBTVDetailResponse {
 	trailer: TMDBVideo | null
 }
 
+export interface BlacklistItem {
+	mediaType: MediaType
+	id: number
+	title: string
+	poster_path: string | null
+	addedAt: number
+}
+
 export interface Toast {
 	id: string
 	message: string
 	type: 'success' | 'error' | 'info'
 }
+
+/** Map from "movie:id" or "tv:id" to the subset of favorite people appearing in it. */
+export type FavoritePeopleByMedia = Record<string, { id: number; name: string }[]>

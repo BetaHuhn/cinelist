@@ -52,6 +52,23 @@ export interface TMDBSeason {
 	air_date: string | null
 }
 
+export interface TMDBEpisode {
+	id: number
+	name: string
+	overview: string
+	episode_number: number
+	season_number: number
+	air_date: string | null
+	still_path: string | null
+	runtime: number | null
+	vote_average: number
+}
+
+export interface TMDBSeasonDetailResponse extends TMDBSeason {
+	episodes: TMDBEpisode[]
+	credits: TMDBCredits
+}
+
 export type TMDBMedia = TMDBMovie | TMDBTV
 
 // Results from `/search/multi` and `/trending/all/*` always include a `media_type`.
