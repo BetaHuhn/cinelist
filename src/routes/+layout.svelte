@@ -10,6 +10,7 @@
 	import ContextMenu from '$components/ui/ContextMenu.svelte'
 	import PersonContextMenu from '$components/ui/PersonContextMenu.svelte'
 	import DetailPreviewModal from '$components/modals/DetailPreviewModal.svelte'
+	import DiscoverModal from '$components/discover/DiscoverModal.svelte'
 	import { loadWatchlist } from '$lib/stores/watchlist'
 	import { loadFavoritePeople } from '$lib/stores/people'
 	import { loadBlacklist } from '$lib/stores/blacklist'
@@ -120,3 +121,5 @@
 <PersonContextMenu />
 
 <DetailPreviewModal />
+
+<DiscoverModal />

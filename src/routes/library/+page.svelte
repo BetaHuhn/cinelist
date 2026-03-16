@@ -10,6 +10,7 @@
 	import type { PageData } from './$types'
 	import { profileUrl } from '$lib/utils/image'
 	import { addToast } from '$lib/stores/ui'
+	import { openDiscover } from '$lib/stores/discover'
 	import WatchlistEmpty from '$components/watchlist/WatchlistEmpty.svelte'
 	import Button from '$components/ui/Button.svelte'
 	import LibraryMediaCard from '$components/library/LibraryMediaCard.svelte'
@@ -327,6 +328,10 @@
 		<div class="flex items-center gap-3">
 			<span class="text-sm" style="color: var(--color-ink-500)">{$watchlist.length} items</span>
 			{#if $watchlist.length > 0}
+				<Button variant="primary" size="sm" onclick={openDiscover}>
+					<svg xmlns="http://www.w3.org/2000/svg" class="size-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+					Feeling Lucky
+				</Button>
 				<Button variant="ghost" size="sm" onclick={() => exportWatchlistToCSV($watchlist)}>
 					Export CSV
 				</Button>
