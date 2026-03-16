@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { profileUrl } from '$lib/utils/image'
+	import { openPersonContextMenu } from '$lib/stores/personContextMenu'
 
 	type PersonLike = {
 		id: number
@@ -7,6 +8,7 @@
 		profile_path?: string | null
 		character?: string | null
 		job?: string | null
+		known_for_department?: string | null
 	}
 
 	interface Props {
@@ -37,7 +39,23 @@
 		<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">{title}</h2>
 		<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
 			{#each visiblePeople as member, i (member.id + '-' + i)}
-				<a href={`/person/${member.id}`} class="flex flex-col items-center text-center gap-2" style="color: inherit">
+				<a
+					href={`/person/${member.id}`}
+					class="flex flex-col items-center text-center gap-2"
+					style="color: inherit"
+					oncontextmenu={(e) => {
+						e.preventDefault()
+						openPersonContextMenu({
+							x: e.clientX,
+							y: e.clientY,
+							id: member.id,
+							name: member.name,
+							profile_path: member.profile_path ?? null,
+							known_for_department: member.known_for_department ?? null,
+							href: `/person/${member.id}`
+						})
+					}}
+				>
 					<div class="size-16 sm:size-20 rounded-full overflow-hidden shrink-0" style="background: var(--color-surface-700)">
 						<img src={profileUrl(member.profile_path)} alt={member.name} class="w-full h-full object-cover" loading="lazy" />
 					</div>

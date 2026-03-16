@@ -3,6 +3,7 @@
 	import { fade } from 'svelte/transition'
 	import { loadWatchlist, watchlist } from '$lib/stores/watchlist'
 	import { favoritePeople, removePersonFromFavorites } from '$lib/stores/people'
+	import { openPersonContextMenu } from '$lib/stores/personContextMenu'
 	import type { WatchlistStatus, WatchlistItem } from '$lib/types/app'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 	import type { LibraryCardSize } from '$lib/types/config'
@@ -376,7 +377,24 @@
 			</div>
 			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 				{#each visibleFavoritePeople as person (person.id)}
-					<div class="flex items-center gap-4 rounded-xl p-4" style="background: var(--color-surface-800)">
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div
+						role="group"
+						class="flex items-center gap-4 rounded-xl p-4"
+						style="background: var(--color-surface-800)"
+						oncontextmenu={(e) => {
+							e.preventDefault()
+							openPersonContextMenu({
+								x: e.clientX,
+								y: e.clientY,
+								id: person.id,
+								name: person.name,
+								profile_path: person.profile_path ?? null,
+								known_for_department: person.known_for_department ?? null,
+								href: `/person/${person.id}`
+							})
+						}}
+					>
 						<a href={`/person/${person.id}`} class="flex items-center gap-4 min-w-0 flex-1" style="color: inherit">
 							<div class="size-12 rounded-full overflow-hidden shrink-0" style="background: var(--color-surface-700)">
 								<img
