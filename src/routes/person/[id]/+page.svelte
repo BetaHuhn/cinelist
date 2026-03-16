@@ -8,13 +8,14 @@
 	import { favoritePeople } from '$lib/stores/people'
 	import { toggleFavoritePerson } from '$lib/stores/people'
 	import { navHistory } from '$lib/stores/navigationHistory'
+	import { blacklist, filterBlacklisted } from '$lib/stores/blacklist'
+	import type { TMDBMedia } from '$lib/types/tmdb'
 	import type { PageData } from './$types'
 
 	let { data }: { data: PageData } = $props()
 
 	const person = $derived(data.person)
 	const primaryLabel = $derived(data.primaryLabel ?? 'Credits')
-	const primaryCredits = $derived(data.primary ?? [])
 	const acting = $derived(data.acting ?? [])
 	const crew = $derived(data.crew ?? [])
 	const crewLabel = $derived(primaryLabel === 'Acting Credits' ? 'Crew Credits' : 'Other Crew Credits')
@@ -32,6 +33,14 @@
 			href: `/person/${person.id}`
 		})
 	})
+  
+	function mediaType(media: TMDBMedia) {
+		return 'title' in media ? 'movie' as const : 'tv' as const
+	}
+
+	const primaryCredits = $derived(filterBlacklisted(data.primary ?? [], mediaType, $blacklist))
+	const filteredActing = $derived(filterBlacklisted(acting, mediaType, $blacklist))
+	const filteredCrew = $derived(filterBlacklisted(crew, mediaType, $blacklist))
 
 	async function toggle() {
 		const wasFav = isFav
@@ -104,21 +113,21 @@
 		</div>
 	{/if}
 
-	{#if acting.length > 0}
+	{#if filteredActing.length > 0}
 		<div class="mt-10">
 			<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Acting Credits</h2>
-			<MovieGrid movies={acting} />
+			<MovieGrid movies={filteredActing} />
 		</div>
 	{/if}
 
-	{#if crew.length > 0}
+	{#if filteredCrew.length > 0}
 		<div class="mt-10">
 			<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">{crewLabel}</h2>
-			<MovieGrid movies={crew} />
+			<MovieGrid movies={filteredCrew} />
 		</div>
 	{/if}
 
-	{#if primaryCredits.length === 0 && acting.length === 0 && crew.length === 0}
+	{#if primaryCredits.length === 0 && filteredActing.length === 0 && filteredCrew.length === 0}
 		<p class="text-sm mt-10" style="color: var(--color-ink-400)">No credits found.</p>
 	{/if}
 </section>

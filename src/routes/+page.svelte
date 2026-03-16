@@ -5,6 +5,7 @@
 	import SearchBar from '$components/search/SearchBar.svelte'
 	import FeaturedCarousel from '$components/library/FeaturedCarousel.svelte'
 	import { watchlist } from '$lib/stores/watchlist'
+	import { blacklist, filterBlacklisted } from '$lib/stores/blacklist'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 	import type { WatchlistItem } from '$lib/types/app'
 	import type { PageData } from './$types'
@@ -44,12 +45,19 @@
 			: { ...base, title: item.title, release_date: item.release_date }
 	}
 
+	function mediaType(media: TMDBMedia) {
+		return 'title' in media ? 'movie' as const : 'tv' as const
+	}
+
 	const watchlistPreview = $derived.by(() =>
 		$watchlist.filter(item => !item.watched && !item.onMediaServer).slice(0, previewCount).map(asMedia)
 	)
 	const libraryPreview = $derived.by(() =>
 		$watchlist.filter(item => !item.watched && item.onMediaServer).slice(0, previewCount).map(asMedia)
 	)
+
+	const trending = $derived(filterBlacklisted(data.trending ?? [], mediaType, $blacklist))
+	const recommended = $derived(filterBlacklisted(data.recommended ?? [], mediaType, $blacklist))
 
 	onMount(() => {
 		updatePreviewCount()
@@ -94,7 +102,7 @@
 			<h2 class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Recommended for You</h2>
 			<p class="text-sm mb-4" style="color: var(--color-ink-300)">Based on your watchlist and ratings</p>
 		</div>
-		<MovieGrid movies={data.recommended} />
+		<MovieGrid movies={recommended} />
 	</section>
 {/if}
 
@@ -104,7 +112,7 @@
 		<h2 class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Trending Now</h2>
 		<p class="text-sm mb-4" style="color: var(--color-ink-300)">What's popular this week</p>
 	</div>
-	<MovieGrid movies={data.trending} />
+	<MovieGrid movies={trending} />
 </section>
 
 {#if watchlistPreview.length > 0}
