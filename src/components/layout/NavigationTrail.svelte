@@ -22,7 +22,7 @@
 
 	function thumbSrc(entry: NavEntry): string {
 		if (entry.type === 'person') return profileUrl(entry.posterPath, 'w45')
-		return posterUrl(entry.posterPath, 'w92')
+		return posterUrl(entry.posterPath, 'w45')
 	}
 
 	function isActive(entry: NavEntry): boolean {
@@ -64,21 +64,26 @@
 
 				<span class="trail-sep" aria-hidden="true">›</span>
 
-				<!-- Current (last) -->
-				<a
-					href={entries[entries.length - 1].href}
-					class="trail-item"
-					class:trail-item--active={isActive(entries[entries.length - 1])}
-					title={entries[entries.length - 1].title}
-				>
-					<img
-						src={thumbSrc(entries[entries.length - 1])}
-						alt={entries[entries.length - 1].title}
-						class="trail-thumb"
-						class:trail-thumb--round={entries[entries.length - 1].type === 'person'}
-					/>
-					<span class="trail-label">{entries[entries.length - 1].title}</span>
-				</a>
+				<!-- Last two entries -->
+				{#each entries.slice(-2) as entry, i (entry.type + ':' + entry.id)}
+					{#if i > 0}
+						<span class="trail-sep" aria-hidden="true">›</span>
+					{/if}
+					<a
+						href={entry.href}
+						class="trail-item"
+						class:trail-item--active={isActive(entry)}
+						title={entry.title}
+					>
+						<img
+							src={thumbSrc(entry)}
+							alt={entry.title}
+							class="trail-thumb"
+							class:trail-thumb--round={entry.type === 'person'}
+						/>
+						<span class="trail-label">{entry.title}</span>
+					</a>
+				{/each}
 			{:else}
 				<!-- Full trail -->
 				{#each entries as entry, i (entry.type + ':' + entry.id)}
@@ -182,7 +187,7 @@
 
 	.trail-thumb {
 		width: 1.25rem;
-		height: 1.875rem;
+		height: 1.25rem;
 		object-fit: cover;
 		border-radius: 0.2rem;
 		flex-shrink: 0;

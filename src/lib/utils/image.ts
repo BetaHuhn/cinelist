@@ -1,6 +1,6 @@
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p'
 
-export function posterUrl(path: string | null | undefined, size: 'w92' | 'w185' | 'w342' | 'w500' = 'w342'): string {
+export function posterUrl(path: string | null | undefined, size: 'w45' | 'w92' | 'w185' | 'w342' | 'w500' = 'w342'): string {
 	if (!path) return '/placeholder-poster.svg'
 	return `${TMDB_IMAGE_BASE}/${size}${path}`
 }
