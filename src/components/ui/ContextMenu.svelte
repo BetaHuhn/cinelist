@@ -39,6 +39,12 @@
 	let adjustedY = $state(0)
 	let visible = $state(false)
 
+	let submenuTriggerEl = $state<HTMLButtonElement | null>(null)
+	let submenuEl = $state<HTMLDivElement | null>(null)
+	let submenuX = $state(0)
+	let submenuY = $state(0)
+	let submenuCloseTimer: ReturnType<typeof setTimeout> | null = null
+
 	$effect(() => {
 		if (!open) {
 			visible = false
@@ -77,7 +83,42 @@
 	}
 
 	function handleOutsideClick(e: MouseEvent) {
-		if (menuEl && !menuEl.contains(e.target as Node)) closeContextMenu()
+		const target = e.target as Node
+		const inMenu = menuEl?.contains(target)
+		const inSubmenu = submenuEl?.contains(target)
+		if (!inMenu && !inSubmenu) closeContextMenu()
+	}
+
+	function openSubmenu() {
+		if (submenuCloseTimer) { clearTimeout(submenuCloseTimer); submenuCloseTimer = null }
+		if (!submenuTriggerEl || !menuEl) return
+		const triggerRect = submenuTriggerEl.getBoundingClientRect()
+		const menuRect = menuEl.getBoundingClientRect()
+		const submenuWidth = 192
+		const submenuHeight = 164
+
+		let x = menuRect.right + 4
+		if (x + submenuWidth > window.innerWidth - 8) x = menuRect.left - submenuWidth - 4
+		if (x < 8) x = 8
+
+		let y = triggerRect.top
+		if (y + submenuHeight > window.innerHeight - 8) y = window.innerHeight - submenuHeight - 8
+		if (y < 8) y = 8
+
+		submenuX = x
+		submenuY = y
+		stateSubmenuOpen = true
+	}
+
+	function scheduleCloseSubmenu() {
+		submenuCloseTimer = setTimeout(() => {
+			stateSubmenuOpen = false
+			submenuCloseTimer = null
+		}, 100)
+	}
+
+	function cancelCloseSubmenu() {
+		if (submenuCloseTimer) { clearTimeout(submenuCloseTimer); submenuCloseTimer = null }
 	}
 
 	function buildMedia(): TMDBMedia {
@@ -261,15 +302,17 @@
 				Save to Watchlist
 			</button>
 		{:else}
-			<!-- Change State with inline submenu -->
+			<!-- Change State with flyout submenu -->
+			<!-- svelte-ignore a11y_interactive_supports_focus -->
 			<button
+				bind:this={submenuTriggerEl}
 				role="menuitem"
 				type="button"
-				onclick={(e) => { e.stopPropagation(); stateSubmenuOpen = !stateSubmenuOpen }}
+				onclick={(e) => { e.stopPropagation(); stateSubmenuOpen ? scheduleCloseSubmenu() : openSubmenu() }}
+				onmouseenter={openSubmenu}
+				onmouseleave={scheduleCloseSubmenu}
 				class="w-full text-left px-4 py-2 text-sm flex items-center gap-3 justify-between transition-colors duration-100"
-				style="color: var(--color-ink-100)"
-				onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-700)' }}
-				onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
+				style="color: var(--color-ink-100); background: {stateSubmenuOpen ? 'var(--color-surface-700)' : ''}"
 				aria-expanded={stateSubmenuOpen}
 				aria-haspopup="true"
 			>
@@ -277,69 +320,8 @@
 					<svg xmlns="http://www.w3.org/2000/svg" class="size-4 shrink-0" style="color: var(--color-ink-500)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
 					Change State
 				</span>
-				<svg xmlns="http://www.w3.org/2000/svg" class="size-3.5 shrink-0 transition-transform duration-150" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-ink-500); transform: rotate({stateSubmenuOpen ? 180 : 0}deg)"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
+				<svg xmlns="http://www.w3.org/2000/svg" class="size-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-ink-500)"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>
 			</button>
-
-			{#if stateSubmenuOpen}
-				<div class="mx-2 mb-1 rounded-lg overflow-hidden" style="background: var(--color-surface-900)">
-					<button
-						role="menuitem"
-						type="button"
-						onclick={() => setWatchlistState('watchlist')}
-						class="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors duration-100"
-						style="color: {watchlistStatus === 'watchlist' ? 'var(--color-amber-500)' : 'var(--color-ink-300)'}"
-						onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-700)' }}
-						onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
-					>
-						<span style="color: var(--color-amber-500)">★</span>
-						On Watchlist
-						{#if watchlistStatus === 'watchlist'}<span class="ml-auto text-xs" style="color: var(--color-ink-500)">current</span>{/if}
-					</button>
-
-					<button
-						role="menuitem"
-						type="button"
-						onclick={() => setWatchlistState('ready')}
-						class="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors duration-100"
-						style="color: {watchlistStatus === 'ready' ? '#4ade80' : 'var(--color-ink-300)'}"
-						onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-700)' }}
-						onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
-					>
-						<span style="color: #4ade80">★</span>
-						Ready to Watch
-						{#if watchlistStatus === 'ready'}<span class="ml-auto text-xs" style="color: var(--color-ink-500)">current</span>{/if}
-					</button>
-
-					<button
-						role="menuitem"
-						type="button"
-						onclick={() => setWatchlistState('watched')}
-						class="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors duration-100"
-						style="color: {watchlistStatus === 'watched' ? '#4ade80' : 'var(--color-ink-300)'}"
-						onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-700)' }}
-						onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
-					>
-						<span style="color: #4ade80">✓</span>
-						Watched
-						{#if watchlistStatus === 'watched'}<span class="ml-auto text-xs" style="color: var(--color-ink-500)">current</span>{/if}
-					</button>
-
-					<div class="mx-2 my-0.5" style="border-top: 1px solid var(--color-surface-700)"></div>
-
-					<button
-						role="menuitem"
-						type="button"
-						onclick={() => setWatchlistState('none')}
-						class="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors duration-100"
-						style="color: var(--color-ink-300)"
-						onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-700)' }}
-						onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" class="size-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
-						Remove from Watchlist
-					</button>
-				</div>
-			{/if}
 		{/if}
 
 		<!-- Separator -->
@@ -381,4 +363,77 @@
 			{/if}
 		</button>
 	</div>
+
+	{#if stateSubmenuOpen}
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+		<!-- svelte-ignore a11y_interactive_supports_focus -->
+		<div
+			bind:this={submenuEl}
+			role="menu"
+			tabindex="-1"
+			aria-label="Change watchlist state"
+			class="fixed z-[201] min-w-48 rounded-xl py-1 shadow-2xl"
+			style="left: {submenuX}px; top: {submenuY}px; background: var(--color-surface-800); border: 1px solid color-mix(in srgb, var(--color-surface-600) 60%, transparent); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6)"
+			onmouseenter={cancelCloseSubmenu}
+			onmouseleave={scheduleCloseSubmenu}
+			onkeydown={(e) => e.stopPropagation()}
+		>
+			<button
+				role="menuitem"
+				type="button"
+				onclick={() => setWatchlistState('watchlist')}
+				class="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors duration-100"
+				style="color: {watchlistStatus === 'watchlist' ? 'var(--color-amber-500)' : 'var(--color-ink-300)'}"
+				onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-700)' }}
+				onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
+			>
+				<span style="color: var(--color-amber-500)">★</span>
+				On Watchlist
+				{#if watchlistStatus === 'watchlist'}<span class="ml-auto text-xs" style="color: var(--color-ink-500)">current</span>{/if}
+			</button>
+
+			<button
+				role="menuitem"
+				type="button"
+				onclick={() => setWatchlistState('ready')}
+				class="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors duration-100"
+				style="color: {watchlistStatus === 'ready' ? '#4ade80' : 'var(--color-ink-300)'}"
+				onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-700)' }}
+				onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
+			>
+				<span style="color: #4ade80">★</span>
+				Ready to Watch
+				{#if watchlistStatus === 'ready'}<span class="ml-auto text-xs" style="color: var(--color-ink-500)">current</span>{/if}
+			</button>
+
+			<button
+				role="menuitem"
+				type="button"
+				onclick={() => setWatchlistState('watched')}
+				class="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors duration-100"
+				style="color: {watchlistStatus === 'watched' ? '#4ade80' : 'var(--color-ink-300)'}"
+				onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-700)' }}
+				onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
+			>
+				<span style="color: #4ade80">✓</span>
+				Watched
+				{#if watchlistStatus === 'watched'}<span class="ml-auto text-xs" style="color: var(--color-ink-500)">current</span>{/if}
+			</button>
+
+			<div class="mx-2 my-0.5" style="border-top: 1px solid var(--color-surface-700)"></div>
+
+			<button
+				role="menuitem"
+				type="button"
+				onclick={() => setWatchlistState('none')}
+				class="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors duration-100"
+				style="color: var(--color-ink-300)"
+				onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-700)' }}
+				onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="size-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+				Remove from Watchlist
+			</button>
+		</div>
+	{/if}
 {/if}
