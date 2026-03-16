@@ -18,6 +18,7 @@ type GraphNode,
 type GraphEdge
 } from '$lib/utils/graph'
 import type { WatchlistItem } from '$lib/types/app'
+import DetailPreviewModal from '$components/modals/DetailPreviewModal.svelte'
 
 interface Props {
 items: WatchlistItem[]
@@ -410,7 +411,7 @@ stroke-width={edge.weight > 4 ? 2 : edge.weight > 1.5 ? 1.2 : 0.7}
 {#if pos}
 <g
 transform="translate({pos.x},{pos.y})"
-style="cursor: {draggingId === node.id ? 'grabbing' : 'pointer'};"
+style="cursor: {draggingId === node.id ? 'grabbing' : 'pointer'}; outline: none;"
 role="button"
 tabindex="0"
 aria-label={node.item.title}
@@ -419,6 +420,8 @@ onpointerup={(e) => onNodePointerUp(e, node.id)}
 onpointercancel={(e) => onNodePointerUp(e, node.id)}
 onpointerenter={() => (hoveredId = node.id)}
 onpointerleave={() => { if (hoveredId === node.id) hoveredId = null }}
+onfocus={() => (hoveredId = node.id)}
+onblur={() => { if (hoveredId === node.id) hoveredId = null }}
 onkeydown={(e) => {
 if (e.key === 'Enter' || e.key === ' ') {
 e.preventDefault()
@@ -587,5 +590,12 @@ aria-label={fullscreen ? 'Exit fullscreen' : 'Expand fullscreen'}
 </svg>
 {/if}
 </button>
+{/if}
+
+<!-- Fullscreen preview: render DetailPreviewModal inside the container so it
+     appears on top of the graph when the browser's Fullscreen API is active.
+     Outside fullscreen the modal in +layout.svelte handles this instead. -->
+{#if fullscreen}
+<DetailPreviewModal />
 {/if}
 </div>
