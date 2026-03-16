@@ -7,6 +7,19 @@
 	const entries = $derived($navHistory)
 	const currentPath = $derived(page.url.pathname)
 
+	// Whether the middle entries are hidden (collapsed)
+	let expanded = $state(false)
+	// The trail length at the moment the user clicked expand
+	let expandedAtLength = $state(0)
+
+	// Collapse when > 3 entries and either: never expanded, or new entries have been added since expansion
+	const isCollapsed = $derived(entries.length > 3 && (!expanded || entries.length > expandedAtLength))
+
+	function expand() {
+		expanded = true
+		expandedAtLength = entries.length
+	}
+
 	function thumbSrc(entry: NavEntry): string {
 		if (entry.type === 'person') return profileUrl(entry.posterPath, 'w45')
 		return posterUrl(entry.posterPath, 'w92')
@@ -15,40 +28,79 @@
 	function isActive(entry: NavEntry): boolean {
 		return currentPath === entry.href
 	}
-
-	let trailEl: HTMLElement | undefined = $state()
-
-	// Auto-scroll the active item into view when entries change
-	$effect(() => {
-		if (!trailEl || !entries.length) return
-		const active = trailEl.querySelector<HTMLElement>('[data-active="true"]')
-		active?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' })
-	})
 </script>
 
 {#if entries.length >= 2}
 	<div class="trail-wrap" transition:fly={{ y: -6, duration: 180 }}>
-		<div class="trail-inner" bind:this={trailEl}>
-			{#each entries as entry, i (entry.type + ':' + entry.id)}
-				{#if i > 0}
-					<span class="trail-sep" aria-hidden="true">›</span>
-				{/if}
+		<div class="trail-inner">
+			{#if isCollapsed}
+				<!-- Origin -->
 				<a
-					href={entry.href}
+					href={entries[0].href}
 					class="trail-item"
-					class:trail-item--active={isActive(entry)}
-					data-active={isActive(entry)}
-					title={entry.title}
+					class:trail-item--active={isActive(entries[0])}
+					title={entries[0].title}
 				>
 					<img
-						src={thumbSrc(entry)}
-						alt={entry.title}
+						src={thumbSrc(entries[0])}
+						alt={entries[0].title}
 						class="trail-thumb"
-						class:trail-thumb--round={entry.type === 'person'}
+						class:trail-thumb--round={entries[0].type === 'person'}
 					/>
-					<span class="trail-label">{entry.title}</span>
+					<span class="trail-label">{entries[0].title}</span>
 				</a>
-			{/each}
+
+				<span class="trail-sep" aria-hidden="true">›</span>
+
+				<!-- Expand button (3 dots) -->
+				<button
+					class="trail-expand"
+					onclick={expand}
+					aria-label={`Show full navigation trail (${entries.length - 2} hidden)`}
+					title="Expand trail"
+				>
+					···
+				</button>
+
+				<span class="trail-sep" aria-hidden="true">›</span>
+
+				<!-- Current (last) -->
+				<a
+					href={entries[entries.length - 1].href}
+					class="trail-item"
+					class:trail-item--active={isActive(entries[entries.length - 1])}
+					title={entries[entries.length - 1].title}
+				>
+					<img
+						src={thumbSrc(entries[entries.length - 1])}
+						alt={entries[entries.length - 1].title}
+						class="trail-thumb"
+						class:trail-thumb--round={entries[entries.length - 1].type === 'person'}
+					/>
+					<span class="trail-label">{entries[entries.length - 1].title}</span>
+				</a>
+			{:else}
+				<!-- Full trail -->
+				{#each entries as entry, i (entry.type + ':' + entry.id)}
+					{#if i > 0}
+						<span class="trail-sep" aria-hidden="true">›</span>
+					{/if}
+					<a
+						href={entry.href}
+						class="trail-item"
+						class:trail-item--active={isActive(entry)}
+						title={entry.title}
+					>
+						<img
+							src={thumbSrc(entry)}
+							alt={entry.title}
+							class="trail-thumb"
+							class:trail-thumb--round={entry.type === 'person'}
+						/>
+						<span class="trail-label">{entry.title}</span>
+					</a>
+				{/each}
+			{/if}
 		</div>
 
 		<button
@@ -69,6 +121,10 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
+		/* Match the app's standard container: max-w-7xl centered with px-4 */
+		max-width: 80rem;
+		margin-left: auto;
+		margin-right: auto;
 		padding: 0 1rem 0.5rem;
 	}
 
@@ -144,6 +200,29 @@
 		text-overflow: ellipsis;
 	}
 
+	.trail-expand {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.125rem 0.5rem;
+		border-radius: 9999px;
+		border: 1px solid var(--color-surface-500);
+		background: none;
+		color: var(--color-ink-500);
+		font-size: 0.875rem;
+		line-height: 1;
+		cursor: pointer;
+		transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+		letter-spacing: 0.05em;
+	}
+
+	.trail-expand:hover {
+		background: var(--color-surface-700);
+		color: var(--color-ink-300);
+		border-color: var(--color-surface-400);
+	}
+
 	.trail-clear {
 		flex-shrink: 0;
 		display: flex;
@@ -165,3 +244,4 @@
 		color: var(--color-ink-300);
 	}
 </style>
+
