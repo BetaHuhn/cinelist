@@ -388,7 +388,7 @@
 				class="whitespace-nowrap text-xs sm:text-sm"
 				style="color: var(--color-ink-500)"
 			>
-				Card size
+				View
 			</label>
 			<select
 				id="library-card-size"
@@ -397,8 +397,8 @@
 				class="text-xs sm:text-sm rounded-lg px-2.5 py-1.5 outline-0"
 				style="background: var(--color-surface-800); color: var(--color-ink-100); border: 1px solid var(--color-surface-700)"
 			>
-				<option value="small">Small</option>
-				<option value="medium">Medium</option>
+				<option value="small">Cards</option>
+				<option value="medium">Posters</option>
 				<option value="graph">Graph</option>
 			</select>
 		</div>
