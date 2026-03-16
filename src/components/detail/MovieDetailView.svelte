@@ -8,6 +8,7 @@
 	import WatchlistButton from '$components/watchlist/WatchlistButton.svelte'
 	import TrailerButton from '$components/movie/TrailerButton.svelte'
 	import TrailerModal from '$components/modals/TrailerModal.svelte'
+	import MoreMenu from '$components/detail/MoreMenu.svelte'
 	import { createDetailHotkeys, type WatchlistButtonHandle } from '$lib/utils/detailHotkeys'
 	import type { MovieDetail } from '$lib/types/app'
 	import type { TMDBMedia } from '$lib/types/tmdb'
@@ -78,6 +79,7 @@
 				{#if movie.trailer}
 					<TrailerButton trailer={movie.trailer} onclick={() => (showTrailer = true)} />
 				{/if}
+				<MoreMenu id={movie.id} mediaType="movie" title={movie.title} poster_path={movie.poster_path} />
 			</div>
 
 			{#if directors.length > 0}
