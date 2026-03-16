@@ -52,18 +52,17 @@ export const load: PageServerLoad = async ({ fetch }) => {
 	}> => {
 		try {
 			const people = await getFavoritePeople()
-			const topPeople = people.slice(0, 5)
-			if (topPeople.length === 0) return { favoritePeopleByMedia: {} }
+			if (people.length === 0) return { favoritePeopleByMedia: {} }
 
 			const allCredits = await Promise.all(
-				topPeople.map(p =>
+				people.map(p =>
 					fetchPersonCombinedCredits(p.id, fetch).catch(() => ({ id: p.id, cast: [], crew: [] }))
 				)
 			)
 
 			const favoritePeopleByMedia: FavoritePeopleByMedia = {}
-			for (let i = 0; i < topPeople.length; i++) {
-				const person = topPeople[i]
+			for (let i = 0; i < people.length; i++) {
+				const person = people[i]
 				const credits = allCredits[i]
 				for (const credit of [...credits.cast, ...credits.crew]) {
 					if (credit.media_type !== 'movie' && credit.media_type !== 'tv') continue
