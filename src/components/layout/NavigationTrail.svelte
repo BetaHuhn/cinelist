@@ -48,6 +48,21 @@
 {#if entries.length >= 2}
 	<div class="trail-wrap" bind:this={trailEl} transition:fly={{ y: -6, duration: 180 }}>
 		<div class="trail-inner">
+			<!-- <div class="mr-2 text-surface-300">
+				<svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4" /><path d="M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5" /></svg>
+			</div> -->
+
+			<button
+				class="trail-clear mr-2 group"
+				onclick={() => navHistory.clear()}
+				aria-label="Clear navigation trail"
+				title="Clear trail"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="size-5 hidden group-hover:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+
+				<svg xmlns="http://www.w3.org/2000/svg" class="size-5 group-hover:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4" /><path d="M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5" /></svg>
+			</button>
+
 			{#if isCollapsed}
 				<!-- Origin -->
 				<a
@@ -65,7 +80,7 @@
 					<span class="trail-label">{entries[0].title}</span>
 				</a>
 
-				<span class="trail-sep" aria-hidden="true">›</span>
+				<span class="trail-sep" aria-hidden="true">‹</span>
 
 				<!-- Expand button (3 dots) -->
 				<button
@@ -77,13 +92,13 @@
 					···
 				</button>
 
-				<span class="trail-sep" aria-hidden="true">›</span>
+				<span class="trail-sep" aria-hidden="true">‹</span>
 
-				<!-- Current (last) entry -->
-				{@const last = entries[entries.length - 1]}
+				<!--  last entry that's not current -->
+				{@const last = entries[entries.length - 2]}
 				<a
 					href={last.href}
-					class="trail-item"
+					class="trail-item trail-item--long"
 					class:trail-item--active={isActive(last)}
 					title={last.title}
 				>
@@ -97,9 +112,9 @@
 				</a>
 			{:else}
 				<!-- Full trail -->
-				{#each entries as entry, i (entry.type + ':' + entry.id)}
+				{#each entries.slice(0, entries.length - 1) as entry, i (entry.type + ':' + entry.id)}
 					{#if i > 0}
-						<span class="trail-sep" aria-hidden="true">›</span>
+						<span class="trail-sep" aria-hidden="true">‹</span>
 					{/if}
 					<a
 						href={entry.href}
@@ -118,17 +133,6 @@
 				{/each}
 			{/if}
 		</div>
-
-		<button
-			class="trail-clear"
-			onclick={() => navHistory.clear()}
-			aria-label="Clear navigation trail"
-			title="Clear trail"
-		>
-			<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" aria-hidden="true">
-				<path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
-			</svg>
-		</button>
 	</div>
 {/if}
 
@@ -179,6 +183,10 @@
 		font-size: 0.75rem;
 		font-weight: 500;
 		max-width: 10rem;
+	}
+
+	.trail-item--long {
+		max-width: 13rem;
 	}
 
 	.trail-item:hover {
