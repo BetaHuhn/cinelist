@@ -40,6 +40,12 @@ export async function getFavoritePeople(): Promise<FavoritePerson[]> {
 		.sort((a, b) => (b as FavoritePerson).addedAt - (a as FavoritePerson).addedAt) as FavoritePerson[]
 }
 
+/** Returns a Map from person ID → person name for all favorited people. */
+export async function getFavoritePeopleMap(): Promise<Map<number, string>> {
+	const people = await getFavoritePeople()
+	return new Map(people.map(p => [p.id, p.name]))
+}
+
 export async function getFavoritePerson(id: number): Promise<FavoritePerson | null> {
 	const item = await storage.getItem<FavoritePerson>(key(id))
 	return normalize(item)

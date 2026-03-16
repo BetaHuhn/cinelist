@@ -12,15 +12,16 @@
 	import Badge from '$components/ui/Badge.svelte'
 	import MoreMenu from '$components/detail/MoreMenu.svelte'
 	import { createDetailHotkeys, type WatchlistButtonHandle } from '$lib/utils/detailHotkeys'
-	import type { TVDetail } from '$lib/types/app'
+	import type { TVDetail, FavoritePeopleByMedia } from '$lib/types/app'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 
 	interface Props {
 		tv: TVDetail
 		related?: TMDBMedia[]
+		favoritePeopleByMedia?: FavoritePeopleByMedia
 	}
 
-	let { tv, related = [] }: Props = $props()
+	let { tv, related = [], favoritePeopleByMedia }: Props = $props()
 	let showTrailer = $state(false)
 	let watchlistButton: WatchlistButtonHandle | null = null
 
@@ -181,7 +182,7 @@
 		{#if relatedItems.length > 0}
 			<div class="mt-10">
 				<h2 class="text-lg font-semibold mb-4" style="color: var(--color-ink-100)">Related</h2>
-				<MovieGrid movies={relatedItems} />
+				<MovieGrid movies={relatedItems} {favoritePeopleByMedia} />
 			</div>
 		{/if}
 	</DetailLayout>
