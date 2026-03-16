@@ -3,6 +3,7 @@
 	import { blacklist, removeFromBlacklist } from '$lib/stores/blacklist'
 	import { addToast } from '$lib/stores/ui'
 	import { posterUrl } from '$lib/utils/image'
+	import { openContextMenu } from '$lib/stores/contextMenu'
 	import type { PageData } from './$types'
 
 	let { data }: { data: PageData } = $props()

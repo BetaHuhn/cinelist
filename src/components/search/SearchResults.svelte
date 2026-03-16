@@ -8,6 +8,7 @@
 	import type { TMDBMediaResult, TMDBPerson } from '$lib/types/tmdb'
 	import { watchlist } from '$lib/stores/watchlist'
 	import { openDetailPreview } from '$lib/utils/preview'
+	import { openContextMenu } from '$lib/stores/contextMenu'
 
 	interface Props {
 		mediaResults: TMDBMediaResult[]
@@ -139,7 +140,23 @@
 			onpointermove={moveHold}
 			onpointerup={endHold}
 			onpointercancel={endHold}
-			oncontextmenu={(e) => suppressClick && e.preventDefault()}
+			oncontextmenu={(e) => {
+				e.preventDefault()
+				abortHold()
+				openContextMenu({
+					x: e.clientX,
+					y: e.clientY,
+					mediaType,
+					id: movie.id,
+					title,
+					poster_path: movie.poster_path,
+					backdrop_path: movie.backdrop_path ?? null,
+					release_date: date,
+					vote_average: movie.vote_average,
+					genre_ids: movie.genre_ids ?? [],
+					href
+				})
+			}}
 			class="flex items-center gap-3 px-4 py-3 transition-colors text-left"
 			style="color: inherit; background: {isSelected ? 'var(--color-surface-700)' : ''}"
 			onmouseenter={(e) => {
