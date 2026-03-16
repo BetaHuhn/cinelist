@@ -12,6 +12,7 @@
 	import Badge from '$components/ui/Badge.svelte'
 	import MoreMenu from '$components/detail/MoreMenu.svelte'
 	import { createDetailHotkeys, type WatchlistButtonHandle } from '$lib/utils/detailHotkeys'
+	import { blacklist, filterBlacklisted } from '$lib/stores/blacklist'
 	import type { TVDetail, FavoritePeopleByMedia } from '$lib/types/app'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 
@@ -51,7 +52,7 @@
 	)
 	const runtime = $derived(tv.episode_run_time?.[0] ?? null)
 	const seasons = $derived((tv.seasons ?? []).filter(s => s.season_number !== 0))
-	const relatedItems = $derived(related.filter(m => m.id !== tv.id).slice(0, 12))
+	const relatedItems = $derived(filterBlacklisted(related.filter(m => m.id !== tv.id), () => 'tv', $blacklist).slice(0, 12))
 </script>
 
 <svelte:window onkeydown={hotkeys.handleKeydown} onkeyup={hotkeys.handleKeyup} onblur={hotkeys.handleWindowBlur} />

@@ -10,6 +10,7 @@
 	import TrailerModal from '$components/modals/TrailerModal.svelte'
 	import MoreMenu from '$components/detail/MoreMenu.svelte'
 	import { createDetailHotkeys, type WatchlistButtonHandle } from '$lib/utils/detailHotkeys'
+	import { blacklist, filterBlacklisted } from '$lib/stores/blacklist'
 	import type { MovieDetail, FavoritePeopleByMedia } from '$lib/types/app'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 
@@ -47,7 +48,7 @@
 			.filter(c => c.job === 'Producer' || c.job === 'Executive Producer')
 			.filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i)
 	)
-	const relatedItems = $derived(related.filter(m => m.id !== movie.id).slice(0, 12))
+	const relatedItems = $derived(filterBlacklisted(related.filter(m => m.id !== movie.id), () => 'movie', $blacklist).slice(0, 12))
 </script>
 
 <svelte:window onkeydown={hotkeys.handleKeydown} onkeyup={hotkeys.handleKeyup} onblur={hotkeys.handleWindowBlur} />
