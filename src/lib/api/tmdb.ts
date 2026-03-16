@@ -16,7 +16,8 @@ import type {
 	TMDBMovieKeywordsResponse,
 	TMDBTVKeywordsResponse,
 	TMDBKeyword,
-	TMDBSeasonDetailResponse
+	TMDBSeasonDetailResponse,
+	TMDBCredits
 } from '$lib/types/tmdb'
 
 const BASE = 'https://api.themoviedb.org/3'
@@ -244,4 +245,18 @@ export function fetchPersonCombinedCredits(
 	fetchFn?: typeof fetch
 ): Promise<TMDBPersonCombinedCreditsResponse> {
 	return tmdbFetch<TMDBPersonCombinedCreditsResponse>(`/person/${id}/combined_credits`, {}, fetchFn)
+}
+
+export function fetchMovieCredits(
+	id: number,
+	fetchFn?: typeof fetch
+): Promise<TMDBCredits> {
+	return tmdbFetch<TMDBCredits>(`/movie/${id}/credits`, {}, fetchFn)
+}
+
+export function fetchTVCredits(
+	id: number,
+	fetchFn?: typeof fetch
+): Promise<TMDBCredits> {
+	return tmdbFetch<TMDBCredits>(`/tv/${id}/credits`, {}, fetchFn)
 }

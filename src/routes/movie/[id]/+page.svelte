@@ -6,6 +6,7 @@
 
 	const movie = $derived(data.movie)
 	const related = $derived(data.related)
+	const favoritePeopleByMedia = $derived(data.favoritePeopleByMedia)
 </script>
 
 <svelte:head>
@@ -14,4 +15,4 @@
 </svelte:head>
 
 
-<MovieDetailView {movie} {related} />
+<MovieDetailView {movie} {related} {favoritePeopleByMedia} />
