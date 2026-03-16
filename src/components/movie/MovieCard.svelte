@@ -29,6 +29,7 @@
 
 	const item = $derived($watchlist.find(i => i.id === movie.id && i.mediaType === mediaType))
 	const saved = $derived(item !== undefined)
+	const userRating = $derived(item?.userRating ?? null)
 
 	const HOLD_MS = 450
 	const MOVE_PX = 10
@@ -178,6 +179,13 @@
 				{#if favoritePeople.length > 1}
 					<span>+{favoritePeople.length - 1}</span>
 				{/if}
+			</div>
+		{/if}
+
+		<!-- User rating badge -->
+		{#if userRating !== null}
+			<div class="absolute bottom-2 right-2 text-xs font-bold px-2 py-0.5 rounded-lg" style="background: color-mix(in srgb, var(--color-surface-950) 80%, transparent); backdrop-filter: blur(4px); color: var(--color-amber-300)">
+				★ {userRating}
 			</div>
 		{/if}
 

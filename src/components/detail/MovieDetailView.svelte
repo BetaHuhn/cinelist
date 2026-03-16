@@ -13,6 +13,7 @@
 	import { blacklist, filterBlacklisted } from '$lib/stores/blacklist'
 	import type { MovieDetail, FavoritePeopleByMedia } from '$lib/types/app'
 	import type { TMDBMedia } from '$lib/types/tmdb'
+	import UserRating from '$components/watchlist/UserRating.svelte'
 
 	interface Props {
 		movie: MovieDetail
@@ -74,6 +75,9 @@
 					<RatingBadge label="Metacritic" value={movie.ratings.metacritic} icon="🎯" />
 				{/if}
 			</div>
+
+			<!-- User Rating -->
+			<UserRating id={movie.id} mediaType="movie" />
 
 			<!-- Actions -->
 			<div class="flex items-center gap-3 flex-wrap">

@@ -31,6 +31,8 @@
 		| 'rating-asc'
 		| 'year-desc'
 		| 'year-asc'
+		| 'user-rating-desc'
+		| 'user-rating-asc'
 
 	let activeFilter = $state<WatchlistStatus>('ready')
 	let activeSort = $state<SortOption>('added-desc')
@@ -162,6 +164,10 @@
 					return (b.release_date ?? '').localeCompare(a.release_date ?? '')
 				case 'year-asc':
 					return (a.release_date ?? '').localeCompare(b.release_date ?? '')
+				case 'user-rating-desc':
+					return (b.userRating ?? -1) - (a.userRating ?? -1)
+				case 'user-rating-asc':
+					return (a.userRating ?? 11) - (b.userRating ?? 11)
 				case 'added-desc':
 				default:
 					return b.addedAt - a.addedAt
@@ -470,8 +476,10 @@
 				<option value="added-asc">↑ Date Added</option>
 				<option value="title-asc">↓ Title</option>
 				<option value="title-desc">↑ Title</option>
-				<option value="rating-desc">↓ Rating</option>
-				<option value="rating-asc">↑ Rating</option>
+				<option value="rating-desc">↓ TMDB Rating</option>
+				<option value="rating-asc">↑ TMDB Rating</option>
+				<option value="user-rating-desc">↓ My Rating</option>
+				<option value="user-rating-asc">↑ My Rating</option>
 				<option value="year-desc">↓ Year</option>
 				<option value="year-asc">↑ Year</option>
 			</select>
