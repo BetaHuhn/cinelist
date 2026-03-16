@@ -128,7 +128,7 @@ export function fetchTVSeasonDetail(
 ): Promise<TMDBSeasonDetailResponse> {
 	return tmdbFetch<TMDBSeasonDetailResponse>(
 		`/tv/${tvId}/season/${seasonNumber}`,
-		{},
+		{ append_to_response: 'credits' },
 		fetchFn
 	)
 }

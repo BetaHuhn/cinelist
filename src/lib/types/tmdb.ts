@@ -66,6 +66,7 @@ export interface TMDBEpisode {
 
 export interface TMDBSeasonDetailResponse extends TMDBSeason {
 	episodes: TMDBEpisode[]
+	credits: TMDBCredits
 }
 
 export type TMDBMedia = TMDBMovie | TMDBTV

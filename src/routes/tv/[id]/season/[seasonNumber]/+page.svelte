@@ -3,6 +3,7 @@
 	import { formatDate, formatRuntime } from '$lib/utils/format'
 	import { posterUrl } from '$lib/utils/image'
 	import Badge from '$components/ui/Badge.svelte'
+	import PeopleGridSection from '$components/detail/PeopleGridSection.svelte'
 	import type { PageData } from './$types'
 
 	let { data }: { data: PageData } = $props()
@@ -11,6 +12,12 @@
 	const tvId = $derived(data.tvId)
 	const tvName = $derived(data.tvName)
 	const episodes = $derived(season.episodes ?? [])
+	const cast = $derived(season.credits?.cast ?? [])
+	const crew = $derived(
+		(season.credits?.crew ?? [])
+			.filter(c => c.job === 'Director' || c.job === 'Producer' || c.job === 'Executive Producer' || c.job === 'Screenplay' || c.job === 'Writer' || c.job === 'Story')
+			.filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i)
+	)
 </script>
 
 <svelte:head>
@@ -105,4 +112,7 @@
 			</div>
 		</div>
 	{/if}
+
+	<PeopleGridSection title="Cast" people={cast} subtitleKey="character" initialLimit={12} />
+	<PeopleGridSection title="Crew" people={crew} subtitleKey="job" initialLimit={6} />
 </section>
