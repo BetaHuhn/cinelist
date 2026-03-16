@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte'
 	import { fade } from 'svelte/transition'
 	import { profileUrl } from '$lib/utils/image'
 	import MovieGrid from '$components/movie/MovieGrid.svelte'
@@ -6,6 +7,7 @@
 	import { addToast } from '$lib/stores/ui'
 	import { favoritePeople } from '$lib/stores/people'
 	import { toggleFavoritePerson } from '$lib/stores/people'
+	import { navHistory } from '$lib/stores/navigationHistory'
 	import { blacklist, filterBlacklisted } from '$lib/stores/blacklist'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 	import type { PageData } from './$types'
@@ -22,6 +24,16 @@
 	let saving = $state(false)
 	let showMore = $state(false)
 
+	onMount(() => {
+		navHistory.push({
+			type: 'person',
+			id: person.id,
+			title: person.name,
+			posterPath: person.profile_path ?? null,
+			href: `/person/${person.id}`
+		})
+	})
+  
 	function mediaType(media: TMDBMedia) {
 		return 'title' in media ? 'movie' as const : 'tv' as const
 	}
