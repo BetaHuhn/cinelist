@@ -7,6 +7,7 @@
 	import { watchlist } from '$lib/stores/watchlist'
 	import WatchlistButton from '$components/watchlist/WatchlistButton.svelte'
 	import { openDetailPreview } from '$lib/utils/preview'
+	import { openContextMenu } from '$lib/stores/contextMenu'
 
 	interface Props {
 		movie: TMDBMedia
@@ -131,7 +132,23 @@
 	onpointermove={moveHold}
 	onpointerup={endHold}
 	onpointercancel={endHold}
-	oncontextmenu={(e) => suppressClick && e.preventDefault()}
+	oncontextmenu={(e) => {
+		e.preventDefault()
+		abortHold()
+		openContextMenu({
+			x: e.clientX,
+			y: e.clientY,
+			mediaType,
+			id: movie.id,
+			title,
+			poster_path: movie.poster_path,
+			backdrop_path: movie.backdrop_path ?? null,
+			release_date: date,
+			vote_average: movie.vote_average,
+			genre_ids: movie.genre_ids ?? movie.genres?.map(g => g.id) ?? [],
+			href
+		})
+	}}
 >
 	<div class="aspect-poster relative overflow-hidden" style="background: var(--color-surface-700)">
 		{#if !imageLoaded}

@@ -7,6 +7,7 @@
 	import BottomNav from '$components/layout/BottomNav.svelte'
 	import PageTransition from '$components/layout/PageTransition.svelte'
 	import Toast from '$components/ui/Toast.svelte'
+	import ContextMenu from '$components/ui/ContextMenu.svelte'
 	import DetailPreviewModal from '$components/modals/DetailPreviewModal.svelte'
 	import { loadWatchlist } from '$lib/stores/watchlist'
 	import { loadFavoritePeople } from '$lib/stores/people'
@@ -112,5 +113,7 @@
 <svelte:window onkeydown={handleGlobalKeydown} />
 
 <Toast />
+
+<ContextMenu />
 
 <DetailPreviewModal />
