@@ -4,6 +4,7 @@
 	import type { WatchlistItem } from '$lib/types/app'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 	import WatchlistButton from '$components/watchlist/WatchlistButton.svelte'
+	import { openContextMenu } from '$lib/stores/contextMenu'
 
 	interface Props {
 		item: WatchlistItem
@@ -42,7 +43,22 @@
 	onpointermove={moveHold}
 	onpointerup={endHold}
 	onpointercancel={endHold}
-	oncontextmenu={(e) => suppressClick && e.preventDefault()}
+	oncontextmenu={(e) => {
+		e.preventDefault()
+		openContextMenu({
+			x: e.clientX,
+			y: e.clientY,
+			mediaType: item.mediaType,
+			id: item.id,
+			title: item.title,
+			poster_path: item.poster_path,
+			backdrop_path: item.backdrop_path,
+			release_date: item.release_date,
+			vote_average: item.vote_average,
+			genre_ids: item.genre_ids,
+			href
+		})
+	}}
 	class="group flex gap-4 rounded-xl overflow-hidden transition-colors card-hover"
 	style="background: var(--color-surface-800); color: inherit"
 >

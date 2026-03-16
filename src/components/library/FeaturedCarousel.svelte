@@ -4,6 +4,7 @@
 	import type { FeaturedItem } from '$lib/types/featured'
 	import { openDetailPreview } from '$lib/utils/preview'
 	import { page } from '$app/state'
+	import { openContextMenu } from '$lib/stores/contextMenu'
 
 	interface Props {
 		items: FeaturedItem[]
@@ -106,7 +107,23 @@
 			onpointermove={moveHold}
 			onpointerup={endHold}
 			onpointercancel={endHold}
-			oncontextmenu={(e) => suppressClick && e.preventDefault()}
+			oncontextmenu={(e) => {
+				e.preventDefault()
+				abortHold()
+				openContextMenu({
+					x: e.clientX,
+					y: e.clientY,
+					mediaType: item.mediaType,
+					id: item.id,
+					title: item.title,
+					poster_path: item.poster_path,
+					backdrop_path: item.backdrop_path,
+					release_date: item.release_date,
+					vote_average: item.vote_average,
+					genre_ids: [],
+					href: hrefFor(item)
+				})
+			}}
 			class="relative snap-start min-w-[320px] sm:min-w-130 h-60 sm:h-72 rounded-2xl overflow-hidden featured-card-hover"
 			style="background: var(--color-surface-800); color: inherit"
 		>
