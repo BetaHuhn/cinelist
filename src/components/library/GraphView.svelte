@@ -63,6 +63,9 @@ let keywordsLoaded = $state(false)
 let keywordMap = $state<Map<string, number[]>>(new Map())
 let _keywordAbort: AbortController | null = null
 
+// ── Fullscreen state ──────────────────────────────────────────────────────
+let fullscreen = $state(false)
+
 // ── Interaction state ─────────────────────────────────────────────────────
 let hoveredId = $state<string | null>(null)
 let draggingId = $state<string | null>(null)
@@ -278,6 +281,32 @@ panY = my - (my - panY) * (newScale / scale)
 scale = newScale
 }
 
+// ── Fullscreen helpers ────────────────────────────────────────────────────
+function toggleFullscreen() {
+if (!containerEl) return
+if (!document.fullscreenElement) {
+void containerEl.requestFullscreen()
+} else {
+void document.exitFullscreen()
+}
+}
+
+function onFullscreenChange() {
+fullscreen = !!document.fullscreenElement
+// Re-measure after the browser has resized the element.
+requestAnimationFrame(() => {
+if (!containerEl) return
+const r = containerEl.getBoundingClientRect()
+w = r.width || 800
+h = r.height || 600
+// Shift the centre force so nodes gravitate to the new centre.
+simulation
+?.force('center', forceCenter<GraphNode>(w / 2, h / 2))
+?.alpha(0.3)
+.restart()
+})
+}
+
 // ── Mount & reactivity ────────────────────────────────────────────────────
 // Track whether the first effect run has been handled by onMount so we don't
 // double-build.
@@ -289,6 +318,7 @@ const r = containerEl.getBoundingClientRect()
 w = r.width || 800
 h = r.height || 600
 }
+document.addEventListener('fullscreenchange', onFullscreenChange)
 _afterFirstMount = true
 buildSimulation()
 void loadKeywords()
@@ -316,13 +346,14 @@ void loadKeywords()
 onDestroy(() => {
 simulation?.stop()
 _keywordAbort?.abort()
+document.removeEventListener('fullscreenchange', onFullscreenChange)
 })
 </script>
 
 <div
 bind:this={containerEl}
-class="relative w-full overflow-hidden rounded-2xl"
-style="height: 600px; background: var(--color-surface-900); touch-action: none;"
+class="relative w-full overflow-hidden {fullscreen ? '' : 'rounded-2xl'}"
+style="height: {fullscreen ? '100vh' : '600px'}; background: var(--color-surface-900); touch-action: none;"
 >
 {#if items.length === 0}
 <div class="flex items-center justify-center h-full">
@@ -531,5 +562,30 @@ Loading keyword connections…
 Scroll to zoom · Drag to pan · {edgeCount} connection{edgeCount === 1 ? '' : 's'}
 {/if}
 </div>
+
+<!-- Expand / collapse button (top-right) -->
+<button
+class="absolute top-3 right-3 z-10 rounded-lg p-1.5 transition-opacity"
+style="background: color-mix(in srgb, var(--color-surface-800) 80%, transparent); color: var(--color-ink-300); opacity: 0.8;"
+onmouseenter={(e) => ((e.currentTarget as HTMLElement).style.opacity = '1')}
+onmouseleave={(e) => ((e.currentTarget as HTMLElement).style.opacity = '0.8')}
+onclick={toggleFullscreen}
+title={fullscreen ? 'Exit fullscreen' : 'Expand fullscreen'}
+aria-label={fullscreen ? 'Exit fullscreen' : 'Expand fullscreen'}
+>
+{#if fullscreen}
+<!-- Compress icon -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/>
+<path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>
+</svg>
+{:else}
+<!-- Expand icon -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<path d="M15 3h6v6"/><path d="M9 21H3v-6"/>
+<path d="M21 3l-7 7"/><path d="M3 21l7-7"/>
+</svg>
+{/if}
+</button>
 {/if}
 </div>
