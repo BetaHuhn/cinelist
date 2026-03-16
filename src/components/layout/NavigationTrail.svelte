@@ -9,20 +9,35 @@
 
 	// Whether the middle entries are hidden (collapsed)
 	let expanded = $state(false)
-	// The trail length at the moment the user clicked expand
-	let expandedAtLength = $state(0)
 
-	// Collapse when > 3 entries and either: never expanded, or new entries have been added since expansion
-	const isCollapsed = $derived(entries.length > 3 && (!expanded || entries.length > expandedAtLength))
+	// Collapse whenever the user navigates to a different page
+	$effect(() => {
+		void currentPath
+		expanded = false
+	})
 
-	function expand() {
-		expanded = true
-		expandedAtLength = entries.length
-	}
+	// Collapse when > 3 entries and user hasn't expanded
+	const isCollapsed = $derived(entries.length > 3 && !expanded)
+
+	let trailEl: HTMLElement | undefined = $state()
+
+	// Collapse on click-outside when expanded
+	$effect(() => {
+		if (!expanded || !trailEl) return
+
+		function handleClickOutside(event: MouseEvent) {
+			if (!trailEl?.contains(event.target as Node)) {
+				expanded = false
+			}
+		}
+
+		document.addEventListener('click', handleClickOutside, true)
+		return () => document.removeEventListener('click', handleClickOutside, true)
+	})
 
 	function thumbSrc(entry: NavEntry): string {
 		if (entry.type === 'person') return profileUrl(entry.posterPath, 'w45')
-		return posterUrl(entry.posterPath, 'w45')
+		return posterUrl(entry.posterPath, 'w92')
 	}
 
 	function isActive(entry: NavEntry): boolean {
@@ -31,7 +46,7 @@
 </script>
 
 {#if entries.length >= 2}
-	<div class="trail-wrap" transition:fly={{ y: -6, duration: 180 }}>
+	<div class="trail-wrap" bind:this={trailEl} transition:fly={{ y: -6, duration: 180 }}>
 		<div class="trail-inner">
 			{#if isCollapsed}
 				<!-- Origin -->
@@ -55,7 +70,7 @@
 				<!-- Expand button (3 dots) -->
 				<button
 					class="trail-expand"
-					onclick={expand}
+					onclick={() => (expanded = true)}
 					aria-label={`Show full navigation trail (${entries.length - 2} hidden)`}
 					title="Expand trail"
 				>
@@ -64,26 +79,22 @@
 
 				<span class="trail-sep" aria-hidden="true">›</span>
 
-				<!-- Last two entries -->
-				{#each entries.slice(-2) as entry, i (entry.type + ':' + entry.id)}
-					{#if i > 0}
-						<span class="trail-sep" aria-hidden="true">›</span>
-					{/if}
-					<a
-						href={entry.href}
-						class="trail-item"
-						class:trail-item--active={isActive(entry)}
-						title={entry.title}
-					>
-						<img
-							src={thumbSrc(entry)}
-							alt={entry.title}
-							class="trail-thumb"
-							class:trail-thumb--round={entry.type === 'person'}
-						/>
-						<span class="trail-label">{entry.title}</span>
-					</a>
-				{/each}
+				<!-- Current (last) entry -->
+				{@const last = entries[entries.length - 1]}
+				<a
+					href={last.href}
+					class="trail-item"
+					class:trail-item--active={isActive(last)}
+					title={last.title}
+				>
+					<img
+						src={thumbSrc(last)}
+						alt={last.title}
+						class="trail-thumb"
+						class:trail-thumb--round={last.type === 'person'}
+					/>
+					<span class="trail-label">{last.title}</span>
+				</a>
 			{:else}
 				<!-- Full trail -->
 				{#each entries as entry, i (entry.type + ':' + entry.id)}
