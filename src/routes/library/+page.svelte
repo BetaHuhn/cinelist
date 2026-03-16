@@ -407,7 +407,7 @@
 	{#if filtered.length === 0}
 		<WatchlistEmpty filter={activeFilter} />
 	{:else if activeCardSize === 'graph'}
-		<GraphView items={filtered} />
+		<GraphView items={filtered} onNodeClick={(item) => openPreview(item.mediaType, item.id)} />
 	{:else if activeCardSize === 'medium'}
 		<MovieGrid movies={filteredAsMedia} />
 	{:else if activeCardSize === 'small'}

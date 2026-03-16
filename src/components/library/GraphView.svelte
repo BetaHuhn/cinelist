@@ -1,6 +1,5 @@
 <script lang="ts">
 import { onMount, onDestroy } from 'svelte'
-import { goto } from '$app/navigation'
 import {
 forceSimulation,
 forceManyBody,
@@ -22,9 +21,10 @@ import type { WatchlistItem } from '$lib/types/app'
 
 interface Props {
 items: WatchlistItem[]
+onNodeClick?: (item: WatchlistItem) => void
 }
 
-let { items }: Props = $props()
+let { items, onNodeClick }: Props = $props()
 
 // ── Container & SVG refs ──────────────────────────────────────────────────
 let containerEl = $state<HTMLDivElement | null>(null)
@@ -61,6 +61,7 @@ let simulation: ReturnType<typeof forceSimulation<GraphNode>> | null = null
 // ── Keyword loading ───────────────────────────────────────────────────────
 let keywordsLoaded = $state(false)
 let keywordMap = $state<Map<string, number[]>>(new Map())
+let _keywordAbort: AbortController | null = null
 
 // ── Interaction state ─────────────────────────────────────────────────────
 let hoveredId = $state<string | null>(null)
@@ -79,21 +80,19 @@ let panAnchor = $state({ clientX: 0, clientY: 0, panX: 0, panY: 0 })
 const NODE_RADIUS = 24
 const BORDER_WIDTH = 3
 
-	// Simulation tuning constants
-	/** Repulsion strength per node (negative = push apart). Barnes-Hut keeps this O(n log n). */
-	const SIM_CHARGE_STRENGTH = -800
-	/** Repulsion is ignored beyond this pixel distance, capping worst-case cost for large graphs. */
-	const SIM_CHARGE_DISTANCE_MAX = 400
-	/** Base link distance (px) for the weakest edge (weight=1). Heavier edges pull nodes closer. */
-	const SIM_LINK_DISTANCE_BASE = 160
-	/** Each unit of edge weight reduces link distance by this many pixels. */
-	const SIM_LINK_DISTANCE_PER_WEIGHT = 8
-	/** Maximum reduction in link distance from weight (to keep the graph legible). */
-	const SIM_LINK_DISTANCE_MAX_REDUCTION = 60
-	/** Spring strength per unit of edge weight. */
-	const SIM_LINK_STRENGTH_PER_WEIGHT = 0.04
-	/** Upper cap for spring strength (prevents over-stiff edges). */
-	const SIM_LINK_STRENGTH_MAX = 0.4
+// Simulation tuning constants
+/** Repulsion is ignored beyond this pixel distance, capping worst-case cost for large graphs. */
+const SIM_CHARGE_DISTANCE_MAX = 400
+/** Base link distance (px). Heavier Jaccard-weighted edges pull nodes closer. */
+const SIM_LINK_DISTANCE_BASE = 160
+/** Each unit of edge weight reduces link distance by this many pixels. */
+const SIM_LINK_DISTANCE_PER_WEIGHT = 12
+/** Maximum reduction in link distance from weight. */
+const SIM_LINK_DISTANCE_MAX_REDUCTION = 80
+/** Spring strength per unit of edge weight. */
+const SIM_LINK_STRENGTH_PER_WEIGHT = 0.06
+/** Upper cap for spring strength. */
+const SIM_LINK_STRENGTH_MAX = 0.5
 
 // ── Derived map for O(1) lookup by hover/drag ─────────────────────────────
 const nodeById = $derived(new Map(displayNodes.map((n) => [n.id, n])))
@@ -137,10 +136,17 @@ edgeCount = edges.length
 // Snapshot initial positions.
 nodePositions = new Map(nodes.map((n) => [n.id, { x: n.x, y: n.y }]))
 
+// Scale charge strength and cooling speed by node count to keep the
+// simulation stable for large libraries.
+const n = nodes.length
+const chargeStrength = n > 100 ? -300 : n > 50 ? -500 : -800
+const alphaDecay = n > 100 ? 0.04 : n > 50 ? 0.03 : 0.025
+const centerStrength = n > 100 ? 0.1 : 0.05
+
 simulation = forceSimulation<GraphNode>(_simNodes)
 .force(
 'charge',
-forceManyBody<GraphNode>().strength(SIM_CHARGE_STRENGTH).distanceMax(SIM_CHARGE_DISTANCE_MAX)
+forceManyBody<GraphNode>().strength(chargeStrength).distanceMax(SIM_CHARGE_DISTANCE_MAX)
 )
 .force(
 'link',
@@ -149,9 +155,9 @@ forceLink<GraphNode, GraphEdge>(edges)
 .distance((e) => SIM_LINK_DISTANCE_BASE - Math.min(e.weight * SIM_LINK_DISTANCE_PER_WEIGHT, SIM_LINK_DISTANCE_MAX_REDUCTION))
 .strength((e) => Math.min(e.weight * SIM_LINK_STRENGTH_PER_WEIGHT, SIM_LINK_STRENGTH_MAX))
 )
-.force('center', forceCenter<GraphNode>(w / 2, h / 2).strength(0.04))
+.force('center', forceCenter<GraphNode>(w / 2, h / 2).strength(centerStrength))
 .force('collide', forceCollide<GraphNode>(NODE_RADIUS + BORDER_WIDTH + 6))
-.alphaDecay(0.025)
+.alphaDecay(alphaDecay)
 .on('tick', () => {
 // Snapshot positions into a new Map to trigger Svelte reactivity.
 nodePositions = new Map(_simNodes.map((n) => [n.id, { x: n.x ?? 0, y: n.y ?? 0 }]))
@@ -161,14 +167,21 @@ nodePositions = new Map(_simNodes.map((n) => [n.id, { x: n.x ?? 0, y: n.y ?? 0 }
 // ── Fetch keywords, then rebuild with keyword edges ────────────────────────
 async function loadKeywords() {
 if (items.length === 0) return
+// Cancel any in-progress fetch for a previous item set.
+_keywordAbort?.abort()
+_keywordAbort = new AbortController()
+const signal = _keywordAbort.signal
+
 const ids = items.map((i) => `${i.mediaType}:${i.id}`).join(',')
 try {
-const res = await fetch(`/api/graph/keywords?items=${encodeURIComponent(ids)}`)
-if (!res.ok) return
+const res = await fetch(`/api/graph/keywords?items=${encodeURIComponent(ids)}`, { signal })
+if (!res.ok || signal.aborted) return
 const data = (await res.json()) as Record<string, number[]>
+if (signal.aborted) return
 keywordMap = new Map(Object.entries(data))
 } catch {
-// Keywords are optional; proceed with genre-only edges.
+// AbortError or network failure — keywords are optional.
+if (signal.aborted) return
 }
 keywordsLoaded = true
 buildSimulation(keywordMap)
@@ -220,7 +233,14 @@ node.fy = null
 simulation?.alphaTarget(0)
 if (!didDrag && node) {
 const item = node.item
+if (onNodeClick) {
+onNodeClick(item)
+} else {
+// Fallback: navigate to detail page if no handler provided.
+import('$app/navigation').then(({ goto }) => {
 void goto(item.mediaType === 'tv' ? `/tv/${item.id}` : `/movie/${item.id}`)
+})
+}
 }
 draggingId = null
 didDrag = false
@@ -258,20 +278,44 @@ panY = my - (my - panY) * (newScale / scale)
 scale = newScale
 }
 
-// ── Mount ─────────────────────────────────────────────────────────────────
+// ── Mount & reactivity ────────────────────────────────────────────────────
+// Track whether the first effect run has been handled by onMount so we don't
+// double-build.
+let _afterFirstMount = false
+
 onMount(() => {
 if (containerEl) {
 const r = containerEl.getBoundingClientRect()
 w = r.width || 800
 h = r.height || 600
 }
-// Initial graph with genre edges only, then load keywords in background.
+_afterFirstMount = true
+buildSimulation()
+void loadKeywords()
+})
+
+// Rebuild the graph whenever the items list changes (e.g. the user switches
+// library tabs).  The flag guards against running before onMount has set up
+// the container dimensions.
+$effect(() => {
+const _items = items // reactive dependency — re-runs when items changes
+if (!_afterFirstMount) return
+
+// Reset viewport and keyword state for the new item set.
+simulation?.stop()
+keywordsLoaded = false
+keywordMap = new Map()
+panX = 0
+panY = 0
+scale = 1
+
 buildSimulation()
 void loadKeywords()
 })
 
 onDestroy(() => {
 simulation?.stop()
+_keywordAbort?.abort()
 })
 </script>
 
@@ -320,9 +364,9 @@ y1={aPos.y}
 x2={bPos.x}
 y2={bPos.y}
 stroke={hasKw
-? `rgba(167,139,250,${edge.weight > 2 ? 0.3 : 0.14})`
-: `rgba(255,255,255,${edge.weight > 2 ? 0.15 : 0.07})`}
-stroke-width={edge.weight > 3 ? 2 : edge.weight > 1 ? 1.2 : 0.7}
+? `rgba(167,139,250,${edge.weight > 4 ? 0.35 : 0.16})`
+: `rgba(255,255,255,${edge.weight > 4 ? 0.18 : 0.08})`}
+stroke-width={edge.weight > 4 ? 2 : edge.weight > 1.5 ? 1.2 : 0.7}
 />
 {/if}
 {/each}
@@ -348,7 +392,13 @@ onkeydown={(e) => {
 if (e.key === 'Enter' || e.key === ' ') {
 e.preventDefault()
 const item = node.item
+if (onNodeClick) {
+onNodeClick(item)
+} else {
+import('$app/navigation').then(({ goto }) => {
 void goto(item.mediaType === 'tv' ? `/tv/${item.id}` : `/movie/${item.id}`)
+})
+}
 }
 }}
 >

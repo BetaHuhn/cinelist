@@ -93,20 +93,26 @@ return item.mediaType === 'tv' ? '#8b5cf6' : '#f59e0b'
 /**
  * Build graph nodes and edges from a watchlist.
  *
- * Edges are created for any two items that share genres or keywords.
- * Edge weight = sharedGenres × GENRE_EDGE_WEIGHT + sharedKeywords × KEYWORD_EDGE_WEIGHT. An auto-adaptive
- * minimum weight threshold keeps the graph readable for large libraries.
+ * Edges are scored using Jaccard similarity so that items sharing a large
+ * proportion of their genres/keywords are strongly connected while items
+ * that merely happen to share one common genre are only weakly (or not)
+ * connected.  A greedy per-node edge cap keeps the total number of edges
+ * O(n) regardless of library size, making the layout stable for hundreds
+ * of items.
  *
- * @param items     Watchlist items to visualise.
- * @param cx        Initial horizontal centre for the circular layout.
- * @param cy        Initial vertical centre for the circular layout.
- * @param keywordMap  Optional map of "mediaType:id" → keyword ID array.
+ * Edge weight scale (0 – 9):
+ *   keyword Jaccard × 6  +  genre Jaccard × 3
+ *
+ * @param items      Watchlist items to visualise.
+ * @param cx         Initial horizontal centre for the layout.
+ * @param cy         Initial vertical centre for the layout.
+ * @param keywordMap Optional map of "mediaType:id" → keyword ID array.
  */
 
-/** Weight contribution of each shared genre ID toward the edge weight. */
-const GENRE_EDGE_WEIGHT = 2
-/** Weight contribution of each shared keyword ID toward the edge weight. */
-const KEYWORD_EDGE_WEIGHT = 1
+/** Maximum edges kept per node (greedy, highest-weight first). */
+const MAX_EDGES_PER_NODE = 8
+/** Minimum combined Jaccard weight to even consider an edge. */
+const MIN_EDGE_WEIGHT = 0.5
 
 export function buildGraph(
 items: WatchlistItem[],
@@ -115,20 +121,29 @@ cy: number,
 keywordMap?: Map<string, number[]>
 ): { nodes: GraphNode[]; edges: GraphEdge[] } {
 const n = items.length
+
+// ── Initial layout ────────────────────────────────────────────────────────
+// For small graphs use a single ring; for larger ones spread nodes randomly
+// across the available area so the simulation starts with less overlap.
 const nodes: GraphNode[] = items.map((item, i) => {
+let x: number, y: number
+if (n <= 40) {
 const angle = (i / Math.max(n, 1)) * 2 * Math.PI
 const r = 60 + Math.min(n, 24) * 7
-return {
-id: `${item.mediaType}:${item.id}`,
-item,
-x: cx + r * Math.cos(angle) + (Math.random() - 0.5) * 30,
-y: cy + r * Math.sin(angle) + (Math.random() - 0.5) * 30,
-fx: null,
-fy: null
+x = cx + r * Math.cos(angle) + (Math.random() - 0.5) * 20
+y = cy + r * Math.sin(angle) + (Math.random() - 0.5) * 20
+} else {
+// Random placement scaled to viewport — avoids the dense-circle problem
+// that causes chaotic initial movement for large item sets.
+const spreadX = cx * 1.4
+const spreadY = cy * 1.4
+x = cx + (Math.random() - 0.5) * spreadX
+y = cy + (Math.random() - 0.5) * spreadY
 }
+return { id: `${item.mediaType}:${item.id}`, item, x, y, fx: null, fy: null }
 })
 
-// Build all candidate edges
+// ── Build candidate edges with Jaccard similarity ─────────────────────────
 const candidates: GraphEdge[] = []
 for (let i = 0; i < n; i++) {
 for (let j = i + 1; j < n; j++) {
@@ -137,34 +152,51 @@ const b = items[j]
 const keyA = `${a.mediaType}:${a.id}`
 const keyB = `${b.mediaType}:${b.id}`
 
-const sharedGenres = a.genre_ids.filter((g) => b.genre_ids.includes(g))
+// Genre Jaccard: |A∩B| / |A∪B|
+const genreSetB = new Set(b.genre_ids)
+const sharedGenres = a.genre_ids.filter((g) => genreSetB.has(g))
+const genreUnion = new Set([...a.genre_ids, ...b.genre_ids]).size
+const genreJaccard = genreUnion > 0 ? sharedGenres.length / genreUnion : 0
 
+// Keyword Jaccard: |A∩B| / |A∪B|
 let sharedKeywords: number[] = []
+let kwJaccard = 0
 if (keywordMap) {
-const kA = new Set(keywordMap.get(keyA) ?? [])
+const kA = keywordMap.get(keyA) ?? []
 const kB = keywordMap.get(keyB) ?? []
-sharedKeywords = kB.filter((k) => kA.has(k))
-}
-
-const weight = sharedGenres.length * GENRE_EDGE_WEIGHT + sharedKeywords.length * KEYWORD_EDGE_WEIGHT
-if (weight > 0) {
-candidates.push({
-source: keyA,
-target: keyB,
-sharedGenres,
-sharedKeywords,
-weight
-})
-}
+if (kA.length > 0 || kB.length > 0) {
+const kwSetA = new Set(kA)
+sharedKeywords = kB.filter((k) => kwSetA.has(k))
+const kwUnion = new Set([...kA, ...kB]).size
+kwJaccard = kwUnion > 0 ? sharedKeywords.length / kwUnion : 0
 }
 }
 
-// Raise minimum weight threshold automatically to keep graph readable
-let minWeight = 1
-if (candidates.length > 400) minWeight = 2
-if (candidates.length > 900) minWeight = 4
+// Combined weight — keyword overlap is the strongest clustering signal.
+const weight = kwJaccard * 6 + genreJaccard * 3
+if (weight < MIN_EDGE_WEIGHT) continue
 
-const edges = candidates.filter((e) => e.weight >= minWeight)
+candidates.push({ source: keyA, target: keyB, sharedGenres, sharedKeywords, weight })
+}
+}
+
+// ── Greedy per-node edge cap (highest weight first) ───────────────────────
+// Limits total edges to O(n) so the simulation stays manageable for large
+// libraries while still preserving the most meaningful connections.
+candidates.sort((a, b) => b.weight - a.weight)
+
+const nodeEdgeCount = new Map<string, number>()
+const edges: GraphEdge[] = []
+for (const e of candidates) {
+const s = e.source as string
+const t = e.target as string
+const sc = nodeEdgeCount.get(s) ?? 0
+const tc = nodeEdgeCount.get(t) ?? 0
+if (sc >= MAX_EDGES_PER_NODE && tc >= MAX_EDGES_PER_NODE) continue
+edges.push(e)
+nodeEdgeCount.set(s, sc + 1)
+nodeEdgeCount.set(t, tc + 1)
+}
 
 return { nodes, edges }
 }
