@@ -58,6 +58,7 @@
 
 	const trending = $derived(filterBlacklisted(data.trending ?? [], mediaType, $blacklist))
 	const recommended = $derived(filterBlacklisted(data.recommended ?? [], mediaType, $blacklist))
+  const newlyReleased = $derived(filterBlacklisted(data.newlyReleased ?? [], mediaType, $blacklist))
 
 	onMount(() => {
 		updatePreviewCount()
@@ -95,14 +96,14 @@
 	</section>
 {/if}
 
-{#if data.recommended?.length > 0}
+{#if recommended?.length > 0}
 	<!-- Personalized Recommendations Section -->
 	<section class="max-w-7xl mx-auto px-4 py-10">
 		<div class="mb-6">
 			<h2 class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Recommended for You</h2>
 			<p class="text-sm mb-4" style="color: var(--color-ink-300)">Based on your watchlist and ratings</p>
 		</div>
-		<MovieGrid movies={recommended} />
+		<MovieGrid movies={recommended} favoritePeopleByMedia={data.favoritePeopleByMedia} />
 	</section>
 {/if}
 
@@ -112,8 +113,19 @@
 		<h2 class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Trending Now</h2>
 		<p class="text-sm mb-4" style="color: var(--color-ink-300)">What's popular this week</p>
 	</div>
-	<MovieGrid movies={trending} />
+	<MovieGrid movies={trending} favoritePeopleByMedia={data.favoritePeopleByMedia} />
 </section>
+
+{#if newlyReleased?.length > 0}
+	<!-- Newly Released Section -->
+	<section class="max-w-7xl mx-auto px-4 py-10">
+		<div class="mb-6">
+			<h2 class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Newly Released</h2>
+			<p class="text-sm mb-4" style="color: var(--color-ink-300)">Recent releases from the past 3 months</p>
+		</div>
+		<MovieGrid movies={newlyReleased} favoritePeopleByMedia={data.favoritePeopleByMedia} />
+	</section>
+{/if}
 
 {#if watchlistPreview.length > 0}
 	<!-- Watchlist Preview Section -->

@@ -65,3 +65,6 @@ export interface Toast {
 	message: string
 	type: 'success' | 'error' | 'info'
 }
+
+/** Map from "movie:id" or "tv:id" to the subset of favorite people appearing in it. */
+export type FavoritePeopleByMedia = Record<string, { id: number; name: string }[]>

@@ -8,6 +8,7 @@
 
 	const movie = $derived(data.movie)
 	const related = $derived(data.related)
+  const favoritePeopleByMedia = $derived(data.favoritePeopleByMedia)
 
 	onMount(() => {
 		navHistory.push({
@@ -26,4 +27,4 @@
 </svelte:head>
 
 
-<MovieDetailView {movie} {related} />
+<MovieDetailView {movie} {related} {favoritePeopleByMedia} />

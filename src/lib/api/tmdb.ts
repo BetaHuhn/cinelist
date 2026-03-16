@@ -16,7 +16,8 @@ import type {
 	TMDBMovieKeywordsResponse,
 	TMDBTVKeywordsResponse,
 	TMDBKeyword,
-	TMDBSeasonDetailResponse
+	TMDBSeasonDetailResponse,
+	TMDBCredits
 } from '$lib/types/tmdb'
 
 const BASE = 'https://api.themoviedb.org/3'
@@ -180,6 +181,10 @@ export interface TMDBDiscoverParams {
 	include_adult?: boolean
 	'vote_count.gte'?: number
 	'vote_average.gte'?: number
+	'primary_release_date.gte'?: string
+	'primary_release_date.lte'?: string
+	'first_air_date.gte'?: string
+	'first_air_date.lte'?: string
 }
 
 function toDiscoverQuery(params: TMDBDiscoverParams): Record<string, string> {
@@ -193,6 +198,10 @@ function toDiscoverQuery(params: TMDBDiscoverParams): Record<string, string> {
 	if (params.page) query.page = String(params.page)
 	if (params['vote_count.gte'] != null) query['vote_count.gte'] = String(params['vote_count.gte'])
 	if (params['vote_average.gte'] != null) query['vote_average.gte'] = String(params['vote_average.gte'])
+	if (params['primary_release_date.gte']) query['primary_release_date.gte'] = params['primary_release_date.gte']
+	if (params['primary_release_date.lte']) query['primary_release_date.lte'] = params['primary_release_date.lte']
+	if (params['first_air_date.gte']) query['first_air_date.gte'] = params['first_air_date.gte']
+	if (params['first_air_date.lte']) query['first_air_date.lte'] = params['first_air_date.lte']
 	return query
 }
 
@@ -236,4 +245,18 @@ export function fetchPersonCombinedCredits(
 	fetchFn?: typeof fetch
 ): Promise<TMDBPersonCombinedCreditsResponse> {
 	return tmdbFetch<TMDBPersonCombinedCreditsResponse>(`/person/${id}/combined_credits`, {}, fetchFn)
+}
+
+export function fetchMovieCredits(
+	id: number,
+	fetchFn?: typeof fetch
+): Promise<TMDBCredits> {
+	return tmdbFetch<TMDBCredits>(`/movie/${id}/credits`, {}, fetchFn)
+}
+
+export function fetchTVCredits(
+	id: number,
+	fetchFn?: typeof fetch
+): Promise<TMDBCredits> {
+	return tmdbFetch<TMDBCredits>(`/tv/${id}/credits`, {}, fetchFn)
 }
