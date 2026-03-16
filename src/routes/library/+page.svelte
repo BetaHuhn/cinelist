@@ -21,7 +21,7 @@
 	let { data }: { data: PageData } = $props()
 
 	let activeFilter = $state<WatchlistStatus>('ready')
-	let activeCardSize = $state<LibraryCardSize>('small')
+	let activeCardSize = $state<LibraryCardSize>('card')
 	let importing = $state(false)
 	let fileInput = $state<HTMLInputElement | null>(null)
 
@@ -44,7 +44,7 @@
 	}
 
 	function isLibraryCardSize(value: unknown): value is LibraryCardSize {
-		return value === 'small' || value === 'medium' || value === 'graph'
+		return value === 'card' || value === 'poster' || value === 'graph'
 	}
 
 	async function loadLibraryCardSizeConfig() {
@@ -397,8 +397,8 @@
 				class="text-xs sm:text-sm rounded-lg px-2.5 py-1.5 outline-0"
 				style="background: var(--color-surface-800); color: var(--color-ink-100); border: 1px solid var(--color-surface-700)"
 			>
-				<option value="small">Cards</option>
-				<option value="medium">Posters</option>
+				<option value="card">Cards</option>
+				<option value="poster">Posters</option>
 				<option value="graph">Graph</option>
 			</select>
 		</div>
@@ -408,9 +408,9 @@
 		<WatchlistEmpty filter={activeFilter} />
 	{:else if activeCardSize === 'graph'}
 		<GraphView items={filtered} onNodeClick={(item) => openPreview(item.mediaType, item.id)} />
-	{:else if activeCardSize === 'medium'}
+	{:else if activeCardSize === 'poster'}
 		<MovieGrid movies={filteredAsMedia} />
-	{:else if activeCardSize === 'small'}
+	{:else if activeCardSize === 'card'}
 		<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 			{#each filtered as item (item.mediaType + ':' + item.id)}
 				<LibraryMediaCard
