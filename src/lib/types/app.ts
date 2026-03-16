@@ -14,6 +14,8 @@ export interface WatchlistItem {
 	addedAt: number
 	onMediaServer: boolean
 	watched: boolean
+	/** User's personal rating from 1–5 stars (only set for watched items). */
+	personalRating?: number
 }
 
 export interface FavoritePerson {

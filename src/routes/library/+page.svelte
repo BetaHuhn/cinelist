@@ -31,6 +31,8 @@
 		| 'rating-asc'
 		| 'year-desc'
 		| 'year-asc'
+		| 'my-rating-desc'
+		| 'my-rating-asc'
 
 	let activeFilter = $state<WatchlistStatus>('ready')
 	let activeSort = $state<SortOption>('added-desc')
@@ -162,6 +164,18 @@
 					return (b.release_date ?? '').localeCompare(a.release_date ?? '')
 				case 'year-asc':
 					return (a.release_date ?? '').localeCompare(b.release_date ?? '')
+				case 'my-rating-desc':
+					// Unrated items sort below rated items
+					if (a.personalRating === undefined && b.personalRating === undefined) return 0
+					if (a.personalRating === undefined) return 1
+					if (b.personalRating === undefined) return -1
+					return b.personalRating - a.personalRating
+				case 'my-rating-asc':
+					// Unrated items sort below rated items
+					if (a.personalRating === undefined && b.personalRating === undefined) return 0
+					if (a.personalRating === undefined) return 1
+					if (b.personalRating === undefined) return -1
+					return a.personalRating - b.personalRating
 				case 'added-desc':
 				default:
 					return b.addedAt - a.addedAt
@@ -474,6 +488,8 @@
 				<option value="rating-asc">↑ Rating</option>
 				<option value="year-desc">↓ Year</option>
 				<option value="year-asc">↑ Year</option>
+				<option value="my-rating-desc">↓ My Rating</option>
+				<option value="my-rating-asc">↑ My Rating</option>
 			</select>
 			<label
 				for="library-card-size"

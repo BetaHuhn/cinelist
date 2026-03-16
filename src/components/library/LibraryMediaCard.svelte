@@ -4,6 +4,7 @@
 	import type { WatchlistItem } from '$lib/types/app'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 	import WatchlistButton from '$components/watchlist/WatchlistButton.svelte'
+	import StarRating from '$components/watchlist/StarRating.svelte'
 	import { openContextMenu } from '$lib/stores/contextMenu'
 
 	interface Props {
@@ -80,8 +81,13 @@
 		</div>
 
 		<div class="mt-auto flex items-center justify-between">
-			{#if item.vote_average > 0}
+			{#if item.watched}
+				<StarRating id={item.id} mediaType={item.mediaType} rating={item.personalRating} />
+			{:else if item.vote_average > 0}
 				<span class="text-xs font-semibold" style="color: var(--color-amber-500)">★ {item.vote_average.toFixed(1)}</span>
+			{:else}
+				<!-- Empty placeholder keeps the justify-between layout -->
+				<span aria-hidden="true"></span>
 			{/if}
 
 			<div class="flex items-center gap-2 flex-wrap">

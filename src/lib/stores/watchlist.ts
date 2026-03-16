@@ -121,3 +121,32 @@ export async function toggleWatched(id: number, mediaType: MediaType = 'movie'):
 		watchlist.set(prev)
 	}
 }
+
+export async function setPersonalRating(id: number, mediaType: MediaType = 'movie', rating: number | null): Promise<void> {
+	const prev = get(watchlist)
+	// Optimistic update
+	watchlist.update(items =>
+		items.map(i => {
+			if (i.id !== id || i.mediaType !== mediaType) return i
+			const updated = { ...i }
+			if (rating === null) {
+				delete updated.personalRating
+			} else {
+				updated.personalRating = rating
+			}
+			return updated
+		})
+	)
+
+	try {
+		const valueParam = rating !== null ? `&value=${rating}` : ''
+		const res = await fetch(`/api/watchlist/${id}?type=${mediaType}&toggle=rating${valueParam}`, { method: 'PATCH' })
+		if (!res.ok) throw new Error('Failed to set rating')
+		const updated = (await res.json()) as WatchlistItem
+		watchlist.update(items =>
+			items.map(i => (i.id === updated.id && i.mediaType === updated.mediaType ? updated : i))
+		)
+	} catch {
+		watchlist.set(prev)
+	}
+}
