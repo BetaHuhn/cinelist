@@ -26,6 +26,15 @@
 			addToast('Could not save rating', 'error')
 		}
 	}
+
+	async function clearRating() {
+		if (!item) return
+		try {
+			await rateItem(id, mediaType, null)
+		} catch {
+			addToast('Could not save rating', 'error')
+		}
+	}
 </script>
 
 {#if item}
@@ -50,7 +59,7 @@
 				<span class="ml-2 text-sm font-bold" style="color: var(--color-amber-400)">{currentRating}/10</span>
 				<button
 					type="button"
-					onclick={() => handleRate(currentRating)}
+					onclick={clearRating}
 					class="ml-1 text-xs leading-none transition-colors duration-100 hover:opacity-80"
 					style="color: var(--color-ink-500)"
 					title="Clear rating"

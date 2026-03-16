@@ -165,6 +165,7 @@
 				case 'year-asc':
 					return (a.release_date ?? '').localeCompare(b.release_date ?? '')
 				case 'user-rating-desc':
+					// Unrated items (-1) sort to the bottom in both directions.
 					return (b.userRating ?? -1) - (a.userRating ?? -1)
 				case 'user-rating-asc':
 					return (a.userRating ?? 11) - (b.userRating ?? 11)
