@@ -172,7 +172,7 @@
 
 			<!-- Hint text -->
 			<p class="text-center text-xs" style="color: var(--color-ink-600)">
-				Swipe right or press → to add · swipe left or press ← to skip
+				Swipe right or press → / L to add · swipe left or press ← / H to skip
 			</p>
 		</div>
 	</div>

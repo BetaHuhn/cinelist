@@ -46,10 +46,12 @@
 	const stackScale = $derived(active ? 1 : 1 - stackIndex * 0.04)
 	const stackY = $derived(active ? 0 : stackIndex * 12)
 
+	const INTERACTIVE_SELECTOR = 'button, a, [role="button"]'
+
 	function onPointerDown(e: PointerEvent) {
 		if (!active) return
 		const target = e.target as HTMLElement
-		if (target.closest('button, a, [role="button"]')) return
+		if (target.closest(INTERACTIVE_SELECTOR)) return
 		dragging = true
 		startX = e.clientX
 		startY = e.clientY
