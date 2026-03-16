@@ -63,6 +63,7 @@
 					style={currentPath === link.href
 						? 'color: var(--color-ink-50); background: var(--color-surface-700)'
 						: 'color: var(--color-ink-500)'}
+					aria-current={currentPath === link.href ? 'page' : undefined}
 				>
 					{link.label}
 				</a>
