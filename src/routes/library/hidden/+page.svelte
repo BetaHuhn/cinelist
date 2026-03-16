@@ -28,19 +28,19 @@
 </svelte:head>
 
 <div class="max-w-7xl mx-auto px-4 py-8" in:fade={{ duration: 200 }}>
+	<a
+		href="/library"
+		class="inline-flex items-center gap-1.5 text-sm transition-colors mb-2"
+		style="color: var(--color-ink-400)"
+		onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--color-ink-100)' }}
+		onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--color-ink-400)' }}
+	>
+		<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			<path d="M19 12H5M12 19l-7-7 7-7"/>
+		</svg>
+		Library
+	</a>
 	<div class="flex items-center gap-4 mb-8">
-		<a
-			href="/library"
-			class="inline-flex items-center gap-1.5 text-sm transition-colors"
-			style="color: var(--color-ink-400)"
-			onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--color-ink-100)' }}
-			onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--color-ink-400)' }}
-		>
-			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-				<path d="M19 12H5M12 19l-7-7 7-7"/>
-			</svg>
-			Library
-		</a>
 		<h1 class="text-2xl font-bold" style="color: var(--color-ink-50)">Hidden Items</h1>
 		<span class="text-sm" style="color: var(--color-ink-500)">{$blacklist.length} items</span>
 	</div>

@@ -62,41 +62,31 @@
 		title="More options"
 	>
 		<!-- Three vertical dots icon -->
-		<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-			<circle cx="12" cy="5" r="2" />
-			<circle cx="12" cy="12" r="2" />
-			<circle cx="12" cy="19" r="2" />
-		</svg>
+		<svg xmlns="http://www.w3.org/2000/svg" class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M11 19a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M11 5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /></svg>
 	</button>
 
 	{#if open}
 		<div
 			role="menu"
-			class="absolute z-50 right-0 top-full mt-1 min-w-44 rounded-xl py-1 shadow-xl"
-			style="background: var(--color-surface-700); border: 1px solid var(--color-surface-600)"
+			class="absolute z-50 right-0 top-full mt-1 min-w-44 rounded-xl shadow-xl overflow-hidden"
+			style="background: var(--color-surface-800); border: 1px solid var(--color-surface-700)"
 		>
 			<button
 				role="menuitem"
 				type="button"
 				onclick={handleBlacklist}
-				class="w-full text-left px-4 py-2.5 text-sm transition-colors duration-100 flex items-center gap-2"
+				class="w-full text-left px-4 py-2 text-sm transition-colors duration-100 flex items-center gap-2"
 				style={blacklisted
 					? 'color: var(--color-ink-300)'
 					: 'color: var(--color-ink-300)'}
-				onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-600)' }}
+				onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-700)' }}
 				onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
 			>
 				{#if blacklisted}
-					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-						<path d="M2.5 2.5l19 19M12 4.5C7 4.5 2.73 7.61 1 12c.59 1.44 1.45 2.73 2.52 3.79M20.25 7.47A10.94 10.94 0 0 1 23 12c-1.73 4.39-6 7.5-11 7.5a10.87 10.87 0 0 1-5.78-1.66"/>
-					</svg>
+					<svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
 					Show again
 				{:else}
-					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-						<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-						<path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-						<line x1="1" y1="1" x2="23" y2="23"/>
-					</svg>
+					<svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" /><path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87" /><path d="M3 3l18 18" /></svg>
 					Hide permanently
 				{/if}
 			</button>
