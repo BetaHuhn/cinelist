@@ -26,6 +26,7 @@
 		| 'title-asc'
 		| 'title-desc'
 		| 'rating-desc'
+		| 'rating-asc'
 		| 'year-desc'
 		| 'year-asc'
 
@@ -153,6 +154,8 @@
 					return b.title.localeCompare(a.title)
 				case 'rating-desc':
 					return b.vote_average - a.vote_average
+				case 'rating-asc':
+					return a.vote_average - b.vote_average
 				case 'year-desc':
 					return (b.release_date ?? '').localeCompare(a.release_date ?? '')
 				case 'year-asc':
@@ -435,13 +438,14 @@
 				class="text-xs sm:text-sm rounded-lg px-2.5 py-1.5 outline-0"
 				style="background: var(--color-surface-800); color: var(--color-ink-100); border: 1px solid var(--color-surface-700)"
 			>
-				<option value="added-desc">Date Added ↓</option>
-				<option value="added-asc">Date Added ↑</option>
-				<option value="title-asc">Title A–Z</option>
-				<option value="title-desc">Title Z–A</option>
-				<option value="rating-desc">Rating ↓</option>
-				<option value="year-desc">Year ↓</option>
-				<option value="year-asc">Year ↑</option>
+				<option value="added-desc">↓ Date Added</option>
+				<option value="added-asc">↑ Date Added</option>
+				<option value="title-asc">↓ Title</option>
+				<option value="title-desc">↑ Title</option>
+				<option value="rating-desc">↓ Rating</option>
+				<option value="rating-asc">↑ Rating</option>
+				<option value="year-desc">↓ Year</option>
+				<option value="year-asc">↑ Year</option>
 			</select>
 			<label
 				for="library-card-size"
