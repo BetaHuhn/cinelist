@@ -10,7 +10,10 @@ export type AppConfigKey = keyof AppConfigSchema
 type Normalizer<K extends AppConfigKey> = (value: unknown) => AppConfigSchema[K]
 
 function normalizeLibraryCardSize(value: unknown): LibraryCardSize {
-	return value === 'medium' ? 'medium' : 'small'
+    if (value === 'card' || value === 'poster' || value === 'graph') {
+        return value as LibraryCardSize
+    }
+    return 'card'
 }
 
 const normalizers: { [K in AppConfigKey]: Normalizer<K> } = {
