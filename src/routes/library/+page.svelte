@@ -15,11 +15,23 @@
 	import FeaturedCarousel from '$components/library/FeaturedCarousel.svelte'
 	import MovieGrid from '$components/movie/MovieGrid.svelte'
 	import { openDetailPreview } from '$lib/utils/preview'
+	import { exportWatchlistToCSV } from '$lib/utils/export'
 	import { page } from '$app/state'
 
 	let { data }: { data: PageData } = $props()
 
+	type SortOption =
+		| 'added-desc'
+		| 'added-asc'
+		| 'title-asc'
+		| 'title-desc'
+		| 'rating-desc'
+		| 'rating-asc'
+		| 'year-desc'
+		| 'year-asc'
+
 	let activeFilter = $state<WatchlistStatus>('ready')
+	let activeSort = $state<SortOption>('added-desc')
 	let activeCardSize = $state<LibraryCardSize>('small')
 	let importing = $state(false)
 	let fileInput = $state<HTMLInputElement | null>(null)
@@ -131,12 +143,38 @@
 			: safeFavoritePeople.slice(0, maxCollapsedPeople)
 	)
 
+	function sortItems(items: WatchlistItem[]): WatchlistItem[] {
+		return [...items].sort((a, b) => {
+			switch (activeSort) {
+				case 'added-asc':
+					return a.addedAt - b.addedAt
+				case 'title-asc':
+					return a.title.localeCompare(b.title)
+				case 'title-desc':
+					return b.title.localeCompare(a.title)
+				case 'rating-desc':
+					return b.vote_average - a.vote_average
+				case 'rating-asc':
+					return a.vote_average - b.vote_average
+				case 'year-desc':
+					return (b.release_date ?? '').localeCompare(a.release_date ?? '')
+				case 'year-asc':
+					return (a.release_date ?? '').localeCompare(b.release_date ?? '')
+				case 'added-desc':
+				default:
+					return b.addedAt - a.addedAt
+			}
+		})
+	}
+
 	const filtered = $derived.by(() => {
 		const items = $watchlist
-		if (activeFilter === 'ready') return items.filter(i => i.onMediaServer && !i.watched)
-		if (activeFilter === 'pending') return items.filter(i => !i.onMediaServer && !i.watched)
-		if (activeFilter === 'watched') return items.filter(i => i.watched)
-		return items
+		let result: WatchlistItem[]
+		if (activeFilter === 'ready') result = items.filter(i => i.onMediaServer && !i.watched)
+		else if (activeFilter === 'pending') result = items.filter(i => !i.onMediaServer && !i.watched)
+		else if (activeFilter === 'watched') result = items.filter(i => i.watched)
+		else result = items
+		return sortItems(result)
 	})
 
 	const readyCount = $derived.by(() => $watchlist.filter(i => i.onMediaServer && !i.watched).length)
@@ -286,9 +324,23 @@
 		<h1 class="text-2xl font-bold" style="color: var(--color-ink-50)">My Library</h1>
 		<div class="flex items-center gap-3">
 			<span class="text-sm" style="color: var(--color-ink-500)">{$watchlist.length} items</span>
+			{#if $watchlist.length > 0}
+				<Button variant="ghost" size="sm" onclick={() => exportWatchlistToCSV($watchlist)}>
+					Export CSV
+				</Button>
+			{/if}
 			<Button variant="ghost" size="sm" loading={importing} onclick={triggerImport}>
 				Import CSV
 			</Button>
+			<a
+				href="/library/hidden"
+				title="Hidden items"
+				aria-label="Hidden items"
+			>
+				<Button variant="ghost" size="sm" class="py-2">
+					<svg xmlns="http://www.w3.org/2000/svg" class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" /><path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87" /><path d="M3 3l18 18" /></svg>
+				</Button>
+			</a>
 			<input
 				type="file"
 				accept=".csv,text/csv"
@@ -382,6 +434,28 @@
 		</div>
 
 		<div class="ml-auto flex items-center gap-2 self-end sm:self-auto">
+			<label
+				for="library-sort"
+				class="whitespace-nowrap text-xs sm:text-sm"
+				style="color: var(--color-ink-500)"
+			>
+				Sort
+			</label>
+			<select
+				id="library-sort"
+				bind:value={activeSort}
+				class="text-xs sm:text-sm rounded-lg px-2.5 py-1.5 outline-0"
+				style="background: var(--color-surface-800); color: var(--color-ink-100); border: 1px solid var(--color-surface-700)"
+			>
+				<option value="added-desc">↓ Date Added</option>
+				<option value="added-asc">↑ Date Added</option>
+				<option value="title-asc">↓ Title</option>
+				<option value="title-desc">↑ Title</option>
+				<option value="rating-desc">↓ Rating</option>
+				<option value="rating-asc">↑ Rating</option>
+				<option value="year-desc">↓ Year</option>
+				<option value="year-asc">↑ Year</option>
+			</select>
 			<label
 				for="library-card-size"
 				class="whitespace-nowrap text-xs sm:text-sm"

@@ -52,6 +52,14 @@ export interface TVDetail extends TMDBTVDetailResponse {
 	trailer: TMDBVideo | null
 }
 
+export interface BlacklistItem {
+	mediaType: MediaType
+	id: number
+	title: string
+	poster_path: string | null
+	addedAt: number
+}
+
 export interface Toast {
 	id: string
 	message: string
