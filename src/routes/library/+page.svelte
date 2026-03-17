@@ -31,6 +31,8 @@
 		| 'rating-asc'
 		| 'year-desc'
 		| 'year-asc'
+		| 'user-rating-desc'
+		| 'user-rating-asc'
 
 	let activeFilter = $state<WatchlistStatus>('ready')
 	let activeSort = $state<SortOption>('added-desc')
@@ -145,9 +147,9 @@
 			: safeFavoritePeople.slice(0, maxCollapsedPeople)
 	)
 
-	function sortItems(items: WatchlistItem[]): WatchlistItem[] {
+	function sortItems(items: WatchlistItem[], sort: SortOption): WatchlistItem[] {
 		return [...items].sort((a, b) => {
-			switch (activeSort) {
+			switch (sort) {
 				case 'added-asc':
 					return a.addedAt - b.addedAt
 				case 'title-asc':
@@ -162,6 +164,12 @@
 					return (b.release_date ?? '').localeCompare(a.release_date ?? '')
 				case 'year-asc':
 					return (a.release_date ?? '').localeCompare(b.release_date ?? '')
+				case 'user-rating-desc':
+					// Unrated items (-1) sort to the bottom in both directions.
+					return (b.userRating ?? -1) - (a.userRating ?? -1)
+				case 'user-rating-asc':
+					// Unrated items (11) sort to the bottom; max valid rating is 10.
+					return (a.userRating ?? 11) - (b.userRating ?? 11)
 				case 'added-desc':
 				default:
 					return b.addedAt - a.addedAt
@@ -170,13 +178,14 @@
 	}
 
 	const filtered = $derived.by(() => {
+		const sort = activeSort
 		const items = $watchlist
 		let result: WatchlistItem[]
 		if (activeFilter === 'ready') result = items.filter(i => i.onMediaServer && !i.watched)
 		else if (activeFilter === 'pending') result = items.filter(i => !i.onMediaServer && !i.watched)
 		else if (activeFilter === 'watched') result = items.filter(i => i.watched)
 		else result = items
-		return sortItems(result)
+		return sortItems(result, sort)
 	})
 
 	const readyCount = $derived.by(() => $watchlist.filter(i => i.onMediaServer && !i.watched).length)
@@ -470,8 +479,10 @@
 				<option value="added-asc">↑ Date Added</option>
 				<option value="title-asc">↓ Title</option>
 				<option value="title-desc">↑ Title</option>
-				<option value="rating-desc">↓ Rating</option>
-				<option value="rating-asc">↑ Rating</option>
+				<option value="rating-desc">↓ TMDB Rating</option>
+				<option value="rating-asc">↑ TMDB Rating</option>
+				<option value="user-rating-desc">↓ My Rating</option>
+				<option value="user-rating-asc">↑ My Rating</option>
 				<option value="year-desc">↓ Year</option>
 				<option value="year-asc">↑ Year</option>
 			</select>

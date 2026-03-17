@@ -17,7 +17,8 @@ function normalizeItem(
 	const addedAt = typeof (item as WatchlistItem).addedAt === 'number' ? (item as WatchlistItem).addedAt : Date.now()
 	const onMediaServer = typeof (item as WatchlistItem).onMediaServer === 'boolean' ? (item as WatchlistItem).onMediaServer : false
 	const watched = typeof (item as WatchlistItem).watched === 'boolean' ? (item as WatchlistItem).watched : false
-	return { ...(item as WatchlistItem), mediaType, addedAt, onMediaServer, watched }
+	const userRating = typeof (item as WatchlistItem).userRating === 'number' ? (item as WatchlistItem).userRating : null
+	return { ...(item as WatchlistItem), mediaType, addedAt, onMediaServer, watched, userRating }
 }
 
 export async function getWatchlist(): Promise<WatchlistItem[]> {
@@ -48,13 +49,14 @@ export async function getItem(mediaType: MediaType, id: number): Promise<Watchli
 }
 
 export async function addItem(
-	item: Omit<WatchlistItem, 'addedAt' | 'onMediaServer' | 'watched'>
+	item: Omit<WatchlistItem, 'addedAt' | 'onMediaServer' | 'watched' | 'userRating'>
 ): Promise<WatchlistItem> {
 	const full: WatchlistItem = {
 		...item,
 		addedAt: Date.now(),
 		onMediaServer: false,
-		watched: false
+		watched: false,
+		userRating: null
 	}
 	await storage.setItem(key(item.mediaType, item.id), full)
 	return full
@@ -90,6 +92,24 @@ export async function toggleWatched(mediaType: MediaType, id: number): Promise<W
 	const current = await getItem(mediaType, id)
 	if (!current) return null
 	const updated: WatchlistItem = { ...current, watched: !current.watched }
+
+	// If the item lives under the legacy movie key, keep updating it there.
+	if (mediaType === 'movie') {
+		const legacy = await storage.getItem<WatchlistItem>(legacyKey(id))
+		if (legacy) {
+			await storage.setItem(legacyKey(id), updated)
+			return updated
+		}
+	}
+
+	await storage.setItem(key(mediaType, id), updated)
+	return updated
+}
+
+export async function setRating(mediaType: MediaType, id: number, rating: number | null): Promise<WatchlistItem | null> {
+	const current = await getItem(mediaType, id)
+	if (!current) return null
+	const updated: WatchlistItem = { ...current, userRating: rating }
 
 	// If the item lives under the legacy movie key, keep updating it there.
 	if (mediaType === 'movie') {
