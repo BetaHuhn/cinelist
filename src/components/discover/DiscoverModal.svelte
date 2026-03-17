@@ -28,17 +28,27 @@
 	function handleLike() {
 		if (!topCard || swipeInFlight) return
 		swipeInFlight = true
+		const card = topCard
 		forcedSwipe = 'right'
-		setTimeout(() => { forcedSwipe = null; swipeInFlight = false }, 400)
-		void swipeRight(topCard)
+		// Reset forcedSwipe BEFORE removing the card from the store so it does
+		// not get inherited by the next card, then kick off the store update.
+		setTimeout(() => {
+			forcedSwipe = null
+			swipeInFlight = false
+			void swipeRight(card)
+		}, 400)
 	}
 
 	function handleDislike() {
 		if (!topCard || swipeInFlight) return
 		swipeInFlight = true
+		const card = topCard
 		forcedSwipe = 'left'
-		setTimeout(() => { forcedSwipe = null; swipeInFlight = false }, 400)
-		void swipeLeft(topCard)
+		setTimeout(() => {
+			forcedSwipe = null
+			swipeInFlight = false
+			void swipeLeft(card)
+		}, 400)
 	}
 
 	function handleKeydown(e: KeyboardEvent) {

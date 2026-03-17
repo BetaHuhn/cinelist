@@ -6,6 +6,7 @@
 	import FeaturedCarousel from '$components/library/FeaturedCarousel.svelte'
 	import { watchlist } from '$lib/stores/watchlist'
 	import { blacklist, filterBlacklisted } from '$lib/stores/blacklist'
+	import { openDiscover } from '$lib/stores/discover'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 	import type { WatchlistItem } from '$lib/types/app'
 	import type { PageData } from './$types'
@@ -86,6 +87,16 @@
 		</p>
 		<div class="max-w-md mx-auto w-full">
 			<SearchBar placeholder="Search for movies, TV & people…" />
+		</div>
+		<div class="flex justify-center">
+			<button
+				class="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-xl transition-all duration-150 active:scale-95"
+				style="background: var(--color-amber-500); color: var(--color-surface-950)"
+				onclick={openDiscover}
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M16 8h.01"/><path d="M8 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/><path d="M12 12h.01"/></svg>
+				Feeling Lucky
+			</button>
 		</div>
 	</div>
 </section>
