@@ -32,8 +32,8 @@ export const PATCH: RequestHandler = async ({ params, url }) => {
 			updated = await setRating(mediaType, id, null)
 		} else {
 			const rating = Number(ratingRaw)
-			if (!Number.isFinite(rating) || rating < 0 || rating > 10) {
-				error(400, 'Rating must be a number between 0 and 10')
+			if (!Number.isFinite(rating) || rating < 0 || rating > 5) {
+				error(400, 'Rating must be a number between 0 and 5')
 			}
 			updated = await setRating(mediaType, id, rating)
 		}

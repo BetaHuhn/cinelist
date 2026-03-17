@@ -147,9 +147,9 @@
 			: safeFavoritePeople.slice(0, maxCollapsedPeople)
 	)
 
-	function sortItems(items: WatchlistItem[]): WatchlistItem[] {
+	function sortItems(items: WatchlistItem[], sort: SortOption): WatchlistItem[] {
 		return [...items].sort((a, b) => {
-			switch (activeSort) {
+			switch (sort) {
 				case 'added-asc':
 					return a.addedAt - b.addedAt
 				case 'title-asc':
@@ -168,7 +168,8 @@
 					// Unrated items (-1) sort to the bottom in both directions.
 					return (b.userRating ?? -1) - (a.userRating ?? -1)
 				case 'user-rating-asc':
-					return (a.userRating ?? 11) - (b.userRating ?? 11)
+					// Unrated items (6) sort to the bottom; max valid rating is 5.
+					return (a.userRating ?? 6) - (b.userRating ?? 6)
 				case 'added-desc':
 				default:
 					return b.addedAt - a.addedAt
@@ -177,13 +178,14 @@
 	}
 
 	const filtered = $derived.by(() => {
+		const sort = activeSort
 		const items = $watchlist
 		let result: WatchlistItem[]
 		if (activeFilter === 'ready') result = items.filter(i => i.onMediaServer && !i.watched)
 		else if (activeFilter === 'pending') result = items.filter(i => !i.onMediaServer && !i.watched)
 		else if (activeFilter === 'watched') result = items.filter(i => i.watched)
 		else result = items
-		return sortItems(result)
+		return sortItems(result, sort)
 	})
 
 	const readyCount = $derived.by(() => $watchlist.filter(i => i.onMediaServer && !i.watched).length)
