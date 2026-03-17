@@ -226,8 +226,8 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="relative {className}" onfocusin={handleFocusIn} onfocusout={handleFocusOut}>
-	<form class="relative z-20" onsubmit={handleSubmit}>
-		<svg class="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 pointer-events-none" style="color: var(--color-ink-500)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+	<form class="relative z-20" onsubmit={handleSubmit} role="search">
+		<svg class="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 pointer-events-none" style="color: var(--color-ink-500)" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
 		</svg>
 		<input
@@ -237,6 +237,13 @@
 			onkeydown={handleInputKeydown}
 			type="search"
 			{placeholder}
+			aria-label="Search movies, TV shows, and people"
+			role="combobox"
+			aria-expanded={open && focused}
+			aria-autocomplete="list"
+			aria-controls="search-suggestions"
+			aria-activedescendant={selectedIndex >= 0 ? `search-option-${selectedIndex}` : undefined}
+			autocomplete="off"
 			class="w-full pl-10 {query.trim() ? 'pr-28' : 'pr-4'} py-3 rounded-xl text-sm focus:outline-none transition-all duration-150"
 			style="background: color-mix(in srgb, var(--color-surface-700) 60%, transparent); border: 1px solid color-mix(in srgb, var(--color-surface-600) 50%, transparent); color: var(--color-ink-50)"
 		/>
@@ -248,7 +255,7 @@
 				aria-label="Search"
 			>
 				{#if loading}
-					<span class="size-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+					<span class="size-4 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
 				{/if}
 				<span>Search</span>
 			</button>
@@ -264,4 +271,13 @@
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="fixed inset-0 z-10" onclick={() => close({ clearQuery: true })}></div>
 	{/if}
+
+	<!-- Visually hidden status region: announces result count to screen readers -->
+	<div aria-live="polite" aria-atomic="true" class="sr-only">
+		{#if loading}
+			Searching…
+		{:else if open && focused && (mediaResults.length > 0 || peopleResults.length > 0)}
+			{mediaResults.length + peopleResults.length} result{mediaResults.length + peopleResults.length === 1 ? '' : 's'} found
+		{/if}
+	</div>
 </div>

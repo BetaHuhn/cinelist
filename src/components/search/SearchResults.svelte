@@ -107,11 +107,14 @@
 </script>
 
 <div
+	id="search-suggestions"
+	role="listbox"
+	aria-label="Search suggestions"
 	in:fly={{ y: -8, duration: 200 }}
 	class="absolute top-full left-0 right-0 mt-2 glass rounded-xl overflow-hidden shadow-2xl z-20 max-h-96 overflow-y-auto"
 >
 	{#if mediaTop.length > 0}
-		<div class="px-4 py-2 text-[11px] font-semibold" style="color: var(--color-ink-500); border-bottom: 1px solid var(--color-surface-700)">
+		<div class="px-4 py-2 text-[11px] font-semibold" style="color: var(--color-ink-500); border-bottom: 1px solid var(--color-surface-700)" aria-hidden="true">
 			Movies & TV
 		</div>
 	{/if}
@@ -133,7 +136,10 @@
 		}
 		{@const isSelected = selectedIndex === i}
 		<a
+			id="search-option-{i}"
 			href={href}
+			role="option"
+			aria-selected={isSelected}
 			data-suggestion-index={i}
 			onclick={(e) => handleClick(e, mediaType, movie.id)}
 			onpointerdown={(e) => startHold(e, mediaType, movie.id)}
@@ -180,30 +186,33 @@
 			</div>
 			<div class="flex items-center gap-2 flex-shrink-0">
 				{#if indicator}
-					<span class="text-sm font-bold" style="color: {indicatorColor}">{indicator}</span>
+					<span class="text-sm font-bold" aria-hidden="true" style="color: {indicatorColor}">{indicator}</span>
 				{/if}
 				{#if movie.vote_average > 0}
-					<span class="text-xs font-semibold" style="color: var(--color-amber-500)">★ {movie.vote_average.toFixed(1)}</span>
+					<span class="text-xs font-semibold" aria-hidden="true" style="color: var(--color-amber-500)">★ {movie.vote_average.toFixed(1)}</span>
 				{/if}
 			</div>
 		</a>
 	{/each}
 
 	{#if mediaResults.length > 8}
-		<p class="text-xs text-center py-2" style="color: var(--color-ink-500); border-top: 1px solid var(--color-surface-700)">
+		<p class="text-xs text-center py-2" style="color: var(--color-ink-500); border-top: 1px solid var(--color-surface-700)" aria-hidden="true">
 			+{mediaResults.length - 8} more results
 		</p>
 	{/if}
 
 	{#if peopleTop.length > 0}
-		<div class="px-4 py-2 text-[11px] font-semibold" style="color: var(--color-ink-500); border-bottom: 1px solid var(--color-surface-700)">
+		<div class="px-4 py-2 text-[11px] font-semibold" style="color: var(--color-ink-500); border-bottom: 1px solid var(--color-surface-700)" aria-hidden="true">
 			People
 		</div>
 		{#each peopleTop as person, i (person.id)}
 			{@const idx = peopleOffset + i}
 			{@const isSelected = selectedIndex === idx}
 			<a
+				id="search-option-{idx}"
 				href={`/person/${person.id}`}
+				role="option"
+				aria-selected={isSelected}
 				data-suggestion-index={idx}
 				onclick={(e) => handlePersonClick(e, person.id)}
 				class="flex items-center gap-3 px-4 py-3 transition-colors text-left"
