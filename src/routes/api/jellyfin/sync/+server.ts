@@ -56,7 +56,8 @@ export const POST: RequestHandler = async () => {
 	let onServerCount = 0
 	let watchedCount = 0
 
-	await Promise.all(
+	// Use allSettled so a failed KV write for one item doesn't abort the rest.
+	await Promise.allSettled(
 		items.map(async (item: WatchlistItem) => {
 			const jellyfinType = item.mediaType === 'movie' ? 'movie' : 'series'
 			const jellyfinItem = tmdbMap.get(`${jellyfinType}:${item.id}`) ?? null

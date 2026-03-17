@@ -56,6 +56,10 @@ Accept: 'application/json'
  * Fetch all movie and series items from the Jellyfin library, paginating as
  * needed.  This is the recommended way to sync in Jellyfin 10.11+ where the
  * AnyProviderIdEquals query parameter is known to be broken.
+ *
+ * Any network or HTTP error on a page fetch is thrown immediately — a partial
+ * dataset would be worse than failing fast, because items missing from an
+ * incomplete snapshot would be incorrectly marked as "not on server".
  */
 export async function getLibraryItems(
 baseUrl: string,
