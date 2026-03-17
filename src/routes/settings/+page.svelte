@@ -118,15 +118,13 @@
 		<div class="flex items-start gap-4 mb-6">
 			<!-- Jellyfin logo mark -->
 			<div
-				class="size-10 rounded-xl flex items-center justify-center shrink-0"
-				style="background: rgba(0,164,220,0.15)"
+				class="size-16 rounded-xl p-2 flex items-center justify-center shrink-0"
+				style="background: #000B25;"
 			>
-				<svg viewBox="0 0 24 24" class="size-6" fill="#00a4dc" xmlns="http://www.w3.org/2000/svg">
-					<path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4.5l6.75 11.25H5.25L12 4.5z" />
-				</svg>
+				<img src="/icons/jellyfin.svg" alt="">
 			</div>
 			<div>
-				<h2 class="text-lg font-semibold" style="color: var(--color-ink-50)">Jellyfin</h2>
+				<h2 class="text-lg font-semibold" style="color: var(--color-ink-50)">Jellyfin Integration</h2>
 				<p class="text-sm mt-0.5" style="color: var(--color-ink-500)">
 					Connect to your Jellyfin media server to automatically sync availability and watched
 					status, and to get a play button for items in your library.
