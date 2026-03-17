@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { fade } from 'svelte/transition'
-	import { loadWatchlist, watchlist } from '$lib/stores/watchlist'
+	import { loadWatchlist, watchlist, syncWithJellyfin } from '$lib/stores/watchlist'
 	import { favoritePeople, removePersonFromFavorites } from '$lib/stores/people'
 	import { openPersonContextMenu } from '$lib/stores/personContextMenu'
 	import type { WatchlistStatus, WatchlistItem } from '$lib/types/app'
@@ -19,6 +19,10 @@
 	import { openDetailPreview } from '$lib/utils/preview'
 	import { exportWatchlistToCSV } from '$lib/utils/export'
 	import { page } from '$app/state'
+  import MoreMenu from '$components/ui/MoreMenu.svelte';
+  import DatabaseExport from '$components/icons/DatabaseExport.svelte';
+  import DatabaseImport from '$components/icons/DatabaseImport.svelte';
+  import EyeOff from '$components/icons/EyeOff.svelte';
 
 	let { data }: { data: PageData } = $props()
 
@@ -38,6 +42,7 @@
 	let activeSort = $state<SortOption>('added-desc')
 	let activeCardSize = $state<LibraryCardSize>('card')
 	let importing = $state(false)
+	let syncing = $state(false)
 	let fileInput = $state<HTMLInputElement | null>(null)
 
 	const HOLD_MS = 450
@@ -324,6 +329,26 @@
 			input.value = ''
 		}
 	}
+
+	async function handleJellyfinSync() {
+		if (syncing) return
+		syncing = true
+		try {
+			const result = await syncWithJellyfin()
+			addToast(
+				`Synced ${result.synced} item${result.synced === 1 ? '' : 's'} — ${result.onServer} on server, ${result.watched} watched`,
+				'success',
+				5000
+			)
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Sync failed'
+			addToast(msg, 'error', 5000)
+		} finally {
+			syncing = false
+		}
+	}
+
+	const jellyfinUrl = $derived(data.jellyfinUrl ?? '')
 </script>
 
 <svelte:head>
@@ -333,25 +358,37 @@
 <div class="max-w-7xl mx-auto px-4 py-8" in:fade={{ duration: 200 }}>
 	<div class="flex items-center justify-between mb-6">
 		<h1 class="text-2xl font-bold" style="color: var(--color-ink-50)">My Library</h1>
-		<div class="flex items-center gap-3">
+		<div class="flex items-center gap-2">
 			<span class="text-sm" style="color: var(--color-ink-500)">{$watchlist.length} items</span>
-			{#if $watchlist.length > 0}
-				<Button variant="ghost" size="sm" onclick={() => exportWatchlistToCSV($watchlist)}>
-					Export CSV
+			{#if jellyfinUrl}
+				<Button variant="ghost" size="sm" loading={syncing} onclick={handleJellyfinSync}>
+					<div class="size-4">
+						<img src="/icons/jellyfin.svg" alt="Jellyfin logo" />
+					</div>
+					<span class="text-sm">Sync</span>
 				</Button>
 			{/if}
-			<Button variant="ghost" size="sm" loading={importing} onclick={triggerImport}>
-				Import CSV
-			</Button>
-			<a
-				href="/library/hidden"
-				title="Hidden items"
-				aria-label="Hidden items"
-			>
-				<Button variant="ghost" size="sm" class="py-2">
-					<svg xmlns="http://www.w3.org/2000/svg" class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" /><path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87" /><path d="M3 3l18 18" /></svg>
-				</Button>
-			</a>
+
+			<MoreMenu items={[
+				{
+					label: 'Export Watchlist',
+					hidden: $watchlist.length === 0,
+					icon: DatabaseExport,
+					action: () => exportWatchlistToCSV($watchlist)
+				},
+				{
+					label: 'Import Watchlist',
+					icon: DatabaseImport,
+					action: triggerImport
+				},
+				{
+					label: 'View Hidden Items',
+					icon: EyeOff,
+					action: () => {
+						window.location.href = '/library/hidden'
+					}
+				}
+			]} />
 			<input
 				type="file"
 				accept=".csv,text/csv"
@@ -518,6 +555,7 @@
 			{#each filtered as item (item.mediaType + ':' + item.id)}
 				<LibraryMediaCard
 					{item}
+					{jellyfinUrl}
 					{handleClick}
 					{startHold}
 					{moveHold}

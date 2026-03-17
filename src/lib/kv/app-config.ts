@@ -16,8 +16,16 @@ function normalizeLibraryCardSize(value: unknown): LibraryCardSize {
     return 'card'
 }
 
+function normalizeString(value: unknown): string {
+	if (typeof value === 'string') return value
+	return ''
+}
+
 const normalizers: { [K in AppConfigKey]: Normalizer<K> } = {
-	libraryCardSize: normalizeLibraryCardSize
+	libraryCardSize: normalizeLibraryCardSize,
+	jellyfinUrl: normalizeString,
+	jellyfinApiKey: normalizeString,
+	jellyfinUserId: normalizeString
 }
 
 export function isAppConfigKey(value: string): value is AppConfigKey {
@@ -41,6 +49,9 @@ export async function setConfigOption<K extends AppConfigKey>(
 
 export async function getAppConfig(): Promise<AppConfigSchema> {
 	return {
-		libraryCardSize: await getConfigOption('libraryCardSize')
+		libraryCardSize: await getConfigOption('libraryCardSize'),
+		jellyfinUrl: await getConfigOption('jellyfinUrl'),
+		jellyfinApiKey: await getConfigOption('jellyfinApiKey'),
+		jellyfinUserId: await getConfigOption('jellyfinUserId')
 	}
 }

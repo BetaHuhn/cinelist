@@ -106,6 +106,31 @@ export async function toggleWatched(mediaType: MediaType, id: number): Promise<W
 	return updated
 }
 
+/**
+ * Partially update a watchlist item in place (used for Jellyfin sync).
+ * Only the provided fields are changed; all others remain as-is.
+ */
+export async function updateItem(
+	mediaType: MediaType,
+	id: number,
+	updates: Partial<Pick<WatchlistItem, 'onMediaServer' | 'watched' | 'jellyfinItemId'>>
+): Promise<WatchlistItem | null> {
+	const current = await getItem(mediaType, id)
+	if (!current) return null
+	const updated: WatchlistItem = { ...current, ...updates }
+
+	if (mediaType === 'movie') {
+		const legacy = await storage.getItem<WatchlistItem>(legacyKey(id))
+		if (legacy) {
+			await storage.setItem(legacyKey(id), updated)
+			return updated
+		}
+	}
+
+	await storage.setItem(key(mediaType, id), updated)
+	return updated
+}
+
 export async function setRating(mediaType: MediaType, id: number, rating: number | null): Promise<WatchlistItem | null> {
 	const current = await getItem(mediaType, id)
 	if (!current) return null
