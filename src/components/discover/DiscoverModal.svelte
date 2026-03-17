@@ -5,6 +5,7 @@
 		discoverCards,
 		discoverLoading,
 		discoverHistory,
+		discoverLibraryMode,
 		closeDiscover,
 		swipeRight,
 		swipeLeft,
@@ -87,9 +88,13 @@
 			<!-- Header -->
 			<div class="flex items-center justify-between">
 				<div>
-					<h2 class="text-lg font-bold text-white">Discover</h2>
+					<h2 class="text-lg font-bold text-white">{$discoverLibraryMode ? 'What to Watch' : 'Discover'}</h2>
 					<p class="text-xs" style="color: var(--color-ink-500)">
-						{liked} added · {skipped} skipped
+						{#if $discoverLibraryMode}
+							{liked} picked · {skipped} skipped
+						{:else}
+							{liked} added · {skipped} skipped
+						{/if}
 					</p>
 				</div>
 				<button
@@ -186,7 +191,11 @@
 
 			<!-- Hint text -->
 			<p class="text-center text-xs" style="color: var(--color-ink-600)">
-				Swipe right or press → / L to add · swipe left or press ← / H to skip
+				{#if $discoverLibraryMode}
+					Swipe right or press → / L to pick · swipe left or press ← / H to skip
+				{:else}
+					Swipe right or press → / L to add · swipe left or press ← / H to skip
+				{/if}
 			</p>
 		</div>
 	</div>

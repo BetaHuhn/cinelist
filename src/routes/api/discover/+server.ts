@@ -34,6 +34,27 @@ async function fetchRecommendations(fetch: typeof globalThis.fetch, fresh = fals
 	return (await res.json()) as TMDBMediaResult[]
 }
 
+/**
+ * Interleave movies and TV shows 3:1 so the deck is movie-heavy.
+ * Preserves the relative ordering within each type (score order from recs).
+ */
+function applyMovieBias(items: TMDBMediaResult[], limit: number): TMDBMediaResult[] {
+	const movies = items.filter(i => i.media_type === 'movie')
+	const tv = items.filter(i => i.media_type === 'tv')
+	const result: TMDBMediaResult[] = []
+	let mi = 0, ti = 0
+	while (result.length < limit && (mi < movies.length || ti < tv.length)) {
+		// 3 movies then 1 TV
+		for (let k = 0; k < 3 && mi < movies.length && result.length < limit; k++) {
+			result.push(movies[mi++])
+		}
+		if (ti < tv.length && result.length < limit) {
+			result.push(tv[ti++])
+		}
+	}
+	return result
+}
+
 export const GET: RequestHandler = async ({ url, fetch }) => {
 	const limit = parseLimit(url)
 	const excluded = parseExcluded(url)
@@ -58,13 +79,13 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 		candidates = await fetchRecommendations(fetch)
 	}
 
-	let results = applyFilters(candidates).slice(0, limit)
+	let results = applyMovieBias(applyFilters(candidates), limit)
 
 	// If the cached pool is exhausted (all items excluded), do a fresh TMDB fetch
 	// so the user gets new suggestions without waiting for the 6-hour cache to expire.
 	if (results.length === 0 && excluded.size > 0) {
 		const fresh = await fetchRecommendations(fetch, true)
-		results = applyFilters(fresh).slice(0, limit)
+		results = applyMovieBias(applyFilters(fresh), limit)
 	}
 
 	return json(results)
