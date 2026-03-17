@@ -39,13 +39,16 @@ function parseLimit(url: URL): number {
 	return Math.max(1, Math.min(60, Math.floor(n)))
 }
 
-function topGenres(genreItems: Array<{ genre_ids: number[] }>, limit: number): number[] {
+function topGenres(genreItems: Array<{ genre_ids: number[]; userRating?: number | null }>, limit: number): number[] {
 	// Assumes items are sorted by preference (most recent first).
 	const scores = new Map<number, number>()
 	for (let i = 0; i < genreItems.length; i++) {
 		const item = genreItems[i]
 		if (!Array.isArray(item.genre_ids) || item.genre_ids.length === 0) continue
-		const weight = Math.exp(-i / 30)
+		const recencyWeight = Math.exp(-i / 30)
+		// User rating scales genre weight: rated 10 → 1.5×, rated 5 → 1.0×, rated 0 → 0.5× (penalty for disliked genres), no rating → 1.0×
+		const ratingFactor = item.userRating != null ? 0.5 + (item.userRating / 10) : 1.0
+		const weight = recencyWeight * ratingFactor
 		for (const genreId of item.genre_ids) {
 			if (typeof genreId !== 'number') continue
 			scores.set(genreId, (scores.get(genreId) ?? 0) + weight)
@@ -157,6 +160,27 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 	const tvPref = new Set(tvGenres)
 	const movieGenreOr = movieGenres.length ? movieGenres.join('|') : undefined
 	const tvGenreOr = tvGenres.length ? tvGenres.join('|') : undefined
+
+	// Build genre → average user rating map to score recommendation candidates.
+	const genreRatingMap = new Map<number, { total: number; count: number }>()
+	for (const item of watchlist) {
+		if (item.userRating == null) continue
+		for (const g of item.genre_ids) {
+			if (typeof g !== 'number') continue
+			const prev = genreRatingMap.get(g) ?? { total: 0, count: 0 }
+			genreRatingMap.set(g, { total: prev.total + item.userRating, count: prev.count + 1 })
+		}
+	}
+	function userGenreAffinity(genres: number[] | undefined): number {
+		const list = (genres ?? []).filter(n => typeof n === 'number')
+		if (list.length === 0 || genreRatingMap.size === 0) return 0
+		let sum = 0, count = 0
+		for (const g of list) {
+			const entry = genreRatingMap.get(g)
+			if (entry) { sum += entry.total / entry.count / 10; count++ }
+		}
+		return count > 0 ? sum / count : 0
+	}
 
 	// If there are no genre IDs (e.g. imported items missing metadata), fall back to trending-like popularity.
 	// We still run discover without with_genres to get a reasonable list.
@@ -394,9 +418,15 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 
 	// Add per-title recommendations from a small set of recent watchlist seeds.
 	// This typically feels more personalized than genre-based discovery.
+	// Prioritize items with high user ratings (≥7) as seeds for better personalization.
 	const pendingFirst = watchlist
 		.slice()
-		.sort((a, b) => Number(a.onMediaServer) - Number(b.onMediaServer) || b.addedAt - a.addedAt)
+		.sort((a, b) => {
+			const aHighRated = (a.userRating ?? 0) >= 7 ? 1 : 0
+			const bHighRated = (b.userRating ?? 0) >= 7 ? 1 : 0
+			if (bHighRated !== aHighRated) return bHighRated - aHighRated
+			return Number(a.onMediaServer) - Number(b.onMediaServer) || b.addedAt - a.addedAt
+		})
 	const seedMovies = pickSeeds(pendingFirst.filter(i => i.mediaType === 'movie'), SEEDS_PER_TYPE)
 	const seedTV = pickSeeds(pendingFirst.filter(i => i.mediaType === 'tv'), SEEDS_PER_TYPE)
 
@@ -524,6 +554,7 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 			const voteAvg = typeof s.item.vote_average === 'number' ? s.item.vote_average : 0
 			const popularity = typeof (s.item as any).popularity === 'number' ? (s.item as any).popularity : 0
 			// Small tuning pass: reduce popularity bias and slightly favor well-rated, less-mainstream titles.
+			// userRatedAffinity: small boost for candidates whose genres match what you've rated highly.
 			const score =
 				0.45 * freq +
 				0.35 * s.bestRecRank +
@@ -531,7 +562,8 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 				0.08 * s.bestDiscoverRank +
 				Math.log10(voteCount + 1) * 0.005 +
 				(voteAvg / 10) * 0.05 -
-				Math.log10(popularity + 1) * 0.02
+				Math.log10(popularity + 1) * 0.02 +
+				userGenreAffinity(s.item.genre_ids) * 0.06
 			if (debug && s.debug) {
 				s.debug.components = {
 					freq,

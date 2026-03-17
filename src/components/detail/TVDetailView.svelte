@@ -15,6 +15,7 @@
 	import { blacklist, filterBlacklisted } from '$lib/stores/blacklist'
 	import type { TVDetail, FavoritePeopleByMedia } from '$lib/types/app'
 	import type { TMDBMedia } from '$lib/types/tmdb'
+	import UserRating from '$components/watchlist/UserRating.svelte'
 
 	interface Props {
 		tv: TVDetail
@@ -93,6 +94,9 @@
 					<RatingBadge label="TMDB" value={tv.ratings.tmdb.toFixed(1)} icon="⭐" />
 				{/if}
 			</div>
+
+			<!-- User Rating -->
+			<UserRating id={tv.id} mediaType="tv" />
 
 			<!-- Actions -->
 			<div class="flex items-center gap-3 flex-wrap">

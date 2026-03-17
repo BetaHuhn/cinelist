@@ -80,9 +80,25 @@ let scale = $state(1)
 let panning = $state(false)
 let panAnchor = $state({ clientX: 0, clientY: 0, panX: 0, panY: 0 })
 
+// ── Pinch-to-zoom tracking (non-reactive – mutated only in event handlers) ─
+let _canvasPointers = new Map<number, { x: number; y: number }>()
+let _isPinching = false
+let _pinchStartDist = 0
+let _pinchStartScale = 1
+let _pinchStartPanX = 0
+let _pinchStartPanY = 0
+let _pinchMidSvgX = 0
+let _pinchMidSvgY = 0
+
 // ── Constants ─────────────────────────────────────────────────────────────
 const NODE_RADIUS = 24
 const BORDER_WIDTH = 3
+
+// Zoom limits and step factors
+const MIN_SCALE = 0.15
+const MAX_SCALE = 5
+const ZOOM_IN_FACTOR = 1.25
+const ZOOM_OUT_FACTOR = 0.8
 
 // Simulation tuning constants
 /** Repulsion is ignored beyond this pixel distance, capping worst-case cost for large graphs. */
@@ -253,26 +269,88 @@ didDrag = false
 // ── Canvas pointer events (pan) ───────────────────────────────────────────
 function onCanvasPointerDown(e: PointerEvent) {
 if (draggingId) return
+;(e.currentTarget as Element).setPointerCapture(e.pointerId)
+_canvasPointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+if (_canvasPointers.size >= 2) {
+// Two fingers on canvas – start pinch-to-zoom
+const pts = Array.from(_canvasPointers.values())
+_pinchStartDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y)
+_pinchStartScale = scale
+_pinchStartPanX = panX
+_pinchStartPanY = panY
+if (svgEl) {
+const r = svgEl.getBoundingClientRect()
+_pinchMidSvgX = (pts[0].x + pts[1].x) / 2 - r.left
+_pinchMidSvgY = (pts[0].y + pts[1].y) / 2 - r.top
+}
+_isPinching = true
+panning = false
+} else {
+_isPinching = false
 panning = true
 panAnchor = { clientX: e.clientX, clientY: e.clientY, panX, panY }
-;(e.currentTarget as Element).setPointerCapture(e.pointerId)
+}
 }
 
 function onCanvasPointerMove(e: PointerEvent) {
+if (_canvasPointers.has(e.pointerId)) {
+_canvasPointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+}
+if (_isPinching) {
+const pts = Array.from(_canvasPointers.values())
+if (pts.length >= 2 && _pinchStartDist > 0) {
+const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y)
+const newScale = Math.min(Math.max(_pinchStartScale * (dist / _pinchStartDist), MIN_SCALE), MAX_SCALE)
+panX = _pinchMidSvgX - (_pinchMidSvgX - _pinchStartPanX) * (newScale / _pinchStartScale)
+panY = _pinchMidSvgY - (_pinchMidSvgY - _pinchStartPanY) * (newScale / _pinchStartScale)
+scale = newScale
+}
+return
+}
 if (!panning) return
 panX = panAnchor.panX + (e.clientX - panAnchor.clientX)
 panY = panAnchor.panY + (e.clientY - panAnchor.clientY)
 }
 
-function onCanvasPointerUp() {
+function onCanvasPointerUp(e: PointerEvent) {
+_canvasPointers.delete(e.pointerId)
+if (_canvasPointers.size < 2) {
+_isPinching = false
+}
+if (_canvasPointers.size === 0) {
 panning = false
+} else if (_canvasPointers.size === 1) {
+// One finger remaining after pinch – restart single-finger pan
+const [, pos] = Array.from(_canvasPointers.entries())[0]
+panning = true
+panAnchor = { clientX: pos.x, clientY: pos.y, panX, panY }
+}
+}
+
+// ── Zoom control helpers ──────────────────────────────────────────────────
+function zoomBy(factor: number) {
+if (!svgEl) { scale = Math.min(Math.max(scale * factor, MIN_SCALE), MAX_SCALE); return }
+const r = svgEl.getBoundingClientRect()
+const mx = r.width / 2
+const my = r.height / 2
+const newScale = Math.min(Math.max(scale * factor, MIN_SCALE), MAX_SCALE)
+panX = mx - (mx - panX) * (newScale / scale)
+panY = my - (my - panY) * (newScale / scale)
+scale = newScale
+}
+
+function resetView() {
+panX = 0
+panY = 0
+scale = 1
 }
 
 // ── Scroll to zoom ────────────────────────────────────────────────────────
 function onWheel(e: WheelEvent) {
 e.preventDefault()
 const factor = e.deltaY < 0 ? 1.1 : 0.9
-const newScale = Math.min(Math.max(scale * factor, 0.15), 5)
+const newScale = Math.min(Math.max(scale * factor, MIN_SCALE), MAX_SCALE)
 if (!svgEl) { scale = newScale; return }
 const r = svgEl.getBoundingClientRect()
 const mx = e.clientX - r.left
@@ -339,6 +417,9 @@ keywordMap = new Map()
 panX = 0
 panY = 0
 scale = 1
+_canvasPointers = new Map()
+_isPinching = false
+panning = false
 
 buildSimulation()
 void loadKeywords()
@@ -562,13 +643,15 @@ style="background: color-mix(in srgb, var(--color-surface-800) 80%, transparent)
 {#if !keywordsLoaded}
 Loading keyword connections…
 {:else}
-Scroll to zoom · Drag to pan · {edgeCount} connection{edgeCount === 1 ? '' : 's'}
+Pinch or scroll to zoom · Drag to pan · {edgeCount} connection{edgeCount === 1 ? '' : 's'}
 {/if}
 </div>
 
-<!-- Expand / collapse button (top-right) -->
+<!-- Top-right controls: fullscreen + zoom buttons -->
+<div class="absolute top-3 right-3 z-10 flex flex-col gap-1">
+<!-- Expand / collapse button -->
 <button
-class="absolute top-3 right-3 z-10 rounded-lg p-1.5 transition-opacity"
+class="rounded-lg p-1.5 transition-opacity"
 style="background: color-mix(in srgb, var(--color-surface-800) 80%, transparent); color: var(--color-ink-300); opacity: 0.8;"
 onmouseenter={(e) => ((e.currentTarget as HTMLElement).style.opacity = '1')}
 onmouseleave={(e) => ((e.currentTarget as HTMLElement).style.opacity = '0.8')}
@@ -590,6 +673,51 @@ aria-label={fullscreen ? 'Exit fullscreen' : 'Expand fullscreen'}
 </svg>
 {/if}
 </button>
+<!-- Zoom in -->
+<button
+class="rounded-lg p-1.5 transition-opacity"
+style="background: color-mix(in srgb, var(--color-surface-800) 80%, transparent); color: var(--color-ink-300); opacity: 0.8;"
+onmouseenter={(e) => ((e.currentTarget as HTMLElement).style.opacity = '1')}
+onmouseleave={(e) => ((e.currentTarget as HTMLElement).style.opacity = '0.8')}
+onclick={() => zoomBy(ZOOM_IN_FACTOR)}
+title="Zoom in"
+aria-label="Zoom in"
+>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+<line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+</svg>
+</button>
+<!-- Zoom out -->
+<button
+class="rounded-lg p-1.5 transition-opacity"
+style="background: color-mix(in srgb, var(--color-surface-800) 80%, transparent); color: var(--color-ink-300); opacity: 0.8;"
+onmouseenter={(e) => ((e.currentTarget as HTMLElement).style.opacity = '1')}
+onmouseleave={(e) => ((e.currentTarget as HTMLElement).style.opacity = '0.8')}
+onclick={() => zoomBy(ZOOM_OUT_FACTOR)}
+title="Zoom out"
+aria-label="Zoom out"
+>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+<line x1="8" y1="11" x2="14" y2="11"/>
+</svg>
+</button>
+<!-- Reset view -->
+<button
+class="rounded-lg p-1.5 transition-opacity"
+style="background: color-mix(in srgb, var(--color-surface-800) 80%, transparent); color: var(--color-ink-300); opacity: 0.8;"
+onmouseenter={(e) => ((e.currentTarget as HTMLElement).style.opacity = '1')}
+onmouseleave={(e) => ((e.currentTarget as HTMLElement).style.opacity = '0.8')}
+onclick={resetView}
+title="Reset view"
+aria-label="Reset view"
+>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+</svg>
+</button>
+</div>
 {/if}
 
 <!-- Fullscreen preview: render DetailPreviewModal inside the container so it

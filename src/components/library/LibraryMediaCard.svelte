@@ -88,8 +88,12 @@
 		</div>
 
 		<div class="mt-auto flex items-center justify-between">
-			{#if item.vote_average > 0}
+			{#if item.userRating !== null && item.userRating !== undefined}
+				<span class="text-xs font-semibold" style="color: var(--color-amber-300)" title="Your rating">★ {item.userRating}/10</span>
+			{:else if item.vote_average > 0}
 				<span class="text-xs font-semibold" style="color: var(--color-amber-500)">★ {item.vote_average.toFixed(1)}</span>
+			{:else}
+				<span></span>
 			{/if}
 
 			<div class="flex items-center gap-2 flex-wrap">
