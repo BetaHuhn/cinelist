@@ -67,6 +67,7 @@
 		<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
 		<div
 			class="relative w-full max-w-sm flex flex-col gap-5"
+			style="outline: none"
 			onclick={(e) => e.stopPropagation()}
 			role="dialog"
 			aria-modal="true"
@@ -132,8 +133,8 @@
 							item={card}
 							active={isTop}
 							{stackIndex}
-							onlike={handleLike}
-							ondislike={handleDislike}
+							onlike={() => { void swipeRight(card) }}
+							ondislike={() => { void swipeLeft(card) }}
 							forcedSwipe={isTop ? forcedSwipe : null}
 						/>
 					{/each}
