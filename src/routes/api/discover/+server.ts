@@ -26,34 +26,46 @@ function parseExcluded(url: URL): Set<string> {
 	)
 }
 
+async function fetchRecommendations(fetch: typeof globalThis.fetch, fresh = false): Promise<TMDBMediaResult[]> {
+	const params = new URLSearchParams({ limit: String(MAX_LIMIT) })
+	if (fresh) params.set('fresh', '1')
+	const res = await fetch(`/api/recommendations?${params}`)
+	if (!res.ok) return []
+	return (await res.json()) as TMDBMediaResult[]
+}
+
 export const GET: RequestHandler = async ({ url, fetch }) => {
 	const limit = parseLimit(url)
 	const excluded = parseExcluded(url)
 
-	// Try to get cached recommendations first; fall back to a fresh fetch.
-	let candidates: TMDBMediaResult[] = []
+	// Filter out already-watchlisted items (server-side).
+	const watchlist = await getWatchlist()
+	const inWatchlist = new Set(watchlist.map(i => `${i.mediaType}:${i.id}`))
 
+	function applyFilters(candidates: TMDBMediaResult[]): TMDBMediaResult[] {
+		return candidates.filter(item => {
+			const key = `${item.media_type}:${item.id}`
+			return !inWatchlist.has(key) && !excluded.has(key)
+		})
+	}
+
+	// Try the recommendations cache first.
+	let candidates: TMDBMediaResult[] = []
 	const cached = await getHomeRecommendationsCache()
 	if (cached && cached.items.length > 0) {
 		candidates = cached.items
 	} else {
-		// No cache yet – fetch recommendations and pass through.
-		const res = await fetch(`/api/recommendations?limit=${MAX_LIMIT}`)
-		if (res.ok) {
-			candidates = (await res.json()) as TMDBMediaResult[]
-		}
+		candidates = await fetchRecommendations(fetch)
 	}
 
-	// Filter out already-watched / watchlisted items.
-	const watchlist = await getWatchlist()
-	const inWatchlist = new Set(watchlist.map(i => `${i.mediaType}:${i.id}`))
+	let results = applyFilters(candidates).slice(0, limit)
 
-	const results = candidates
-		.filter(item => {
-			const key = `${item.media_type}:${item.id}`
-			return !inWatchlist.has(key) && !excluded.has(key)
-		})
-		.slice(0, limit)
+	// If the cached pool is exhausted (all items excluded), do a fresh TMDB fetch
+	// so the user gets new suggestions without waiting for the 6-hour cache to expire.
+	if (results.length === 0 && excluded.size > 0) {
+		const fresh = await fetchRecommendations(fetch, true)
+		results = applyFilters(fresh).slice(0, limit)
+	}
 
 	return json(results)
 }

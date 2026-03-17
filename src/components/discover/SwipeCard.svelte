@@ -93,36 +93,20 @@
 		}
 	}
 
-	/** Called by parent buttons */
-	export function triggerLike() {
-		if (!active) return
-		swiping = 'right'
-		dx = 300
-		setTimeout(() => {
-			swiping = null
-			dx = 0
-			dy = 0
-			onlike()
-		}, 350)
-	}
-
-	export function triggerDislike() {
-		if (!active) return
-		swiping = 'left'
-		dx = -300
-		setTimeout(() => {
-			swiping = null
-			dx = 0
-			dy = 0
-			ondislike()
-		}, 350)
-	}
-
-	// React to forcedSwipe prop from parent
+	// React to forcedSwipe prop from parent.
+	// This is a VISUAL-ONLY animation — the parent has already updated state
+	// (called swipeRight/swipeLeft), so we must NOT call onlike/ondislike here,
+	// which would create a cascade of swipes on subsequent cards.
 	$effect(() => {
 		if (!active || !forcedSwipe) return
-		if (forcedSwipe === 'right') triggerLike()
-		else triggerDislike()
+		swiping = forcedSwipe as 'left' | 'right'
+		dx = forcedSwipe === 'right' ? 300 : -300
+		const t = setTimeout(() => {
+			swiping = null
+			dx = 0
+			dy = 0
+		}, 350)
+		return () => clearTimeout(t)
 	})
 
 	const flyX = $derived(

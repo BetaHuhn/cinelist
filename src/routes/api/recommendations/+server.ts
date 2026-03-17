@@ -129,12 +129,20 @@ function prefOverlap(genres: number[] | undefined, pref: Set<number>): number {
 	return hit / list.length
 }
 
+/** Number of items stored in the cache — large enough to give the discover
+ *  feature a deep pool without exhausting results quickly, while keeping each
+ *  slimmed item ≈ 300 bytes well under Deno KV's 64 KB per-value limit.
+ *  At ~300 bytes/item this yields ~18 KB total for the cached payload. */
+const CACHE_SIZE = 60
+
 export const GET: RequestHandler = async ({ url, fetch }) => {
 	const limit = parseLimit(url)
 	const debug = dev && url.searchParams.get('debug') === '1'
+	// `?fresh=1` lets the discover endpoint bypass the cache when the pool is exhausted.
+	const fresh = !debug && url.searchParams.get('fresh') === '1'
 
-	// Debug responses should reflect the current watchlist/seed selection; don't serve stale cached payloads.
-	if (!debug) {
+	// Debug and fresh responses should reflect the current watchlist/seed selection.
+	if (!debug && !fresh) {
 		const cached = await getHomeRecommendationsCache()
 		if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
 			return json(cached.items.slice(0, limit))
@@ -554,7 +562,7 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 		return json([])
 	}
 
-	const finalItems = ranked.slice(0, Math.max(limit, DEFAULT_LIMIT))
+	const finalItems = ranked.slice(0, CACHE_SIZE)
 	if (!debug) await setHomeRecommendationsCache(finalItems)
 
 	if (debug) {

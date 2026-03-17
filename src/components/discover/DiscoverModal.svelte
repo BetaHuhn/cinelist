@@ -22,19 +22,22 @@
 
 	/** forcedSwipe drives animation on the top card via its prop */
 	let forcedSwipe = $state<'left' | 'right' | null>(null)
+	/** Guard: true while an animation is in flight — blocks additional swipe triggers */
+	let swipeInFlight = $state(false)
 
 	function handleLike() {
-		if (!topCard) return
+		if (!topCard || swipeInFlight) return
+		swipeInFlight = true
 		forcedSwipe = 'right'
-		// Reset after animation window so future button presses work
-		setTimeout(() => { forcedSwipe = null }, 400)
+		setTimeout(() => { forcedSwipe = null; swipeInFlight = false }, 400)
 		void swipeRight(topCard)
 	}
 
 	function handleDislike() {
-		if (!topCard) return
+		if (!topCard || swipeInFlight) return
+		swipeInFlight = true
 		forcedSwipe = 'left'
-		setTimeout(() => { forcedSwipe = null }, 400)
+		setTimeout(() => { forcedSwipe = null; swipeInFlight = false }, 400)
 		void swipeLeft(topCard)
 	}
 

@@ -29,12 +29,11 @@ export function closeDiscover() {
 	discoverOpen.set(false)
 }
 
-export async function fetchMoreCards(extra: string[] = []) {
+export async function fetchMoreCards() {
 	discoverLoading.set(true)
 	try {
-		for (const key of extra) sessionExcluded.add(key)
 		const excluded = Array.from(sessionExcluded).join(',')
-		const params = new URLSearchParams({ limit: '20' })
+		const params = new URLSearchParams({ limit: '60' })
 		if (excluded) params.set('excluded', excluded)
 		const res = await fetch(`/api/discover?${params}`)
 		if (!res.ok) return
@@ -65,7 +64,7 @@ export async function swipeRight(item: TMDBMediaResult) {
 	await addToWatchlist(item)
 
 	// Refill deck if running low
-	if (get(discoverCards).length < 5) {
+	if (get(discoverCards).length < 10) {
 		await fetchMoreCards()
 	}
 }
@@ -83,7 +82,7 @@ export async function swipeLeft(item: TMDBMediaResult) {
 	discoverCards.update(cards => cards.filter(c => !(c.id === item.id && c.media_type === item.media_type)))
 
 	// Refill deck if running low
-	if (get(discoverCards).length < 5) {
+	if (get(discoverCards).length < 10) {
 		await fetchMoreCards()
 	}
 }
