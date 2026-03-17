@@ -54,7 +54,13 @@ Accept: 'application/json'
 
 /**
  * Look up a single item in Jellyfin by its TMDB ID.
- * Returns the first matching item (with UserData), or null if not found.
+ * Returns the matching item (with UserData), or null if not found.
+ *
+ * After receiving the response we also verify that the returned item's
+ * ProviderIds actually contain the expected TMDB ID.  Some Jellyfin versions
+ * silently ignore the AnyProviderIdEquals query parameter and return all
+ * items (up to Limit:1); without this check every watchlist entry would be
+ * falsely marked as "on server".
  */
 export async function findByTmdbId(
 baseUrl: string,
@@ -86,5 +92,14 @@ throw new Error(`Jellyfin returned HTTP ${res.status}`)
 }
 
 const data = (await res.json()) as JellyfinItemsResponse
-return data.Items?.[0] ?? null
+const item = data.Items?.[0] ?? null
+if (!item) return null
+
+// Verify the returned item actually has the TMDB ID we queried.
+// Jellyfin stores provider IDs with a capital "Tmdb" key, but check
+// lowercase "tmdb" as well for older/non-standard installations.
+const providerTmdbId = item.ProviderIds?.Tmdb ?? item.ProviderIds?.tmdb
+if (providerTmdbId !== String(tmdbId)) return null
+
+return item
 }
