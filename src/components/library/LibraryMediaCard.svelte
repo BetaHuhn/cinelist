@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { posterUrl } from '$lib/utils/image'
 	import { formatYear } from '$lib/utils/format'
+	import { buildJellyfinPlayUrl } from '$lib/utils/jellyfin'
 	import type { WatchlistItem } from '$lib/types/app'
 	import type { TMDBMedia } from '$lib/types/tmdb'
 	import WatchlistButton from '$components/watchlist/WatchlistButton.svelte'
@@ -8,6 +9,7 @@
 
 	interface Props {
 		item: WatchlistItem
+		jellyfinUrl: string
 		handleClick: (e: MouseEvent, mediaType: 'movie' | 'tv', id: number) => void
 		startHold: (e: PointerEvent, mediaType: 'movie' | 'tv', id: number) => void
 		moveHold: (e: PointerEvent) => void
@@ -15,7 +17,7 @@
 		suppressClick: boolean
 	}
 
-	let { item, handleClick, startHold, moveHold, endHold, suppressClick }: Props = $props()
+	let { item, jellyfinUrl, handleClick, startHold, moveHold, endHold, suppressClick }: Props = $props()
 
 	const href = $derived(item.mediaType === 'tv' ? `/tv/${item.id}` : `/movie/${item.id}`)
 	const media = $derived.by((): TMDBMedia => {
@@ -34,6 +36,12 @@
 			? { ...base, name: item.title, first_air_date: item.release_date }
 			: { ...base, title: item.title, release_date: item.release_date }
 	})
+
+	const jellyfinPlayUrl = $derived(
+		jellyfinUrl && item.jellyfinItemId
+			? buildJellyfinPlayUrl(jellyfinUrl, item.jellyfinItemId)
+			: null
+	)
 </script>
 
 <a
@@ -85,6 +93,25 @@
 			{/if}
 
 			<div class="flex items-center gap-2 flex-wrap">
+				{#if jellyfinPlayUrl}
+					<button
+						type="button"
+						data-no-preview
+						aria-label="Play in Jellyfin"
+						onclick={(e) => {
+							e.preventDefault()
+							e.stopPropagation()
+							window.open(jellyfinPlayUrl, '_blank', 'noopener,noreferrer')
+						}}
+						class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full transition-all duration-150 ease-spring active:scale-95"
+						style="background: rgba(0,164,220,0.15); color: #00a4dc"
+					>
+						<svg class="size-3" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+							<path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4.5l6.75 11.25H5.25L12 4.5z" />
+						</svg>
+						Play
+					</button>
+				{/if}
 				<WatchlistButton media={media} size="sm" hideDropdown hideTooltip hideLabel minimal />
 			</div>
 		</div>

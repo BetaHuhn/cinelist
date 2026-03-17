@@ -14,6 +14,7 @@ export interface WatchlistItem {
 	addedAt: number
 	onMediaServer: boolean
 	watched: boolean
+	jellyfinItemId?: string
 }
 
 export interface FavoritePerson {

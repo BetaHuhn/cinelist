@@ -121,3 +121,14 @@ export async function toggleWatched(id: number, mediaType: MediaType = 'movie'):
 		watchlist.set(prev)
 	}
 }
+
+export async function syncWithJellyfin(): Promise<{ synced: number; onServer: number; watched: number }> {
+	const res = await fetch('/api/jellyfin/sync', { method: 'POST' })
+	if (!res.ok) {
+		const body = (await res.json().catch(() => null)) as { message?: string } | null
+		throw new Error(body?.message ?? `Sync failed (HTTP ${res.status})`)
+	}
+	const data = (await res.json()) as { synced: number; onServer: number; watched: number; items: WatchlistItem[] }
+	watchlist.set(data.items)
+	return { synced: data.synced, onServer: data.onServer, watched: data.watched }
+}

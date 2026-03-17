@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { fade } from 'svelte/transition'
-	import { loadWatchlist, watchlist } from '$lib/stores/watchlist'
+	import { loadWatchlist, watchlist, syncWithJellyfin } from '$lib/stores/watchlist'
 	import { favoritePeople, removePersonFromFavorites } from '$lib/stores/people'
 	import { openPersonContextMenu } from '$lib/stores/personContextMenu'
 	import type { WatchlistStatus, WatchlistItem } from '$lib/types/app'
@@ -36,6 +36,7 @@
 	let activeSort = $state<SortOption>('added-desc')
 	let activeCardSize = $state<LibraryCardSize>('card')
 	let importing = $state(false)
+	let syncing = $state(false)
 	let fileInput = $state<HTMLInputElement | null>(null)
 
 	const HOLD_MS = 450
@@ -315,6 +316,26 @@
 			input.value = ''
 		}
 	}
+
+	async function handleJellyfinSync() {
+		if (syncing) return
+		syncing = true
+		try {
+			const result = await syncWithJellyfin()
+			addToast(
+				`Synced ${result.synced} item${result.synced === 1 ? '' : 's'} — ${result.onServer} on server, ${result.watched} watched`,
+				'success',
+				5000
+			)
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Sync failed'
+			addToast(msg, 'error', 5000)
+		} finally {
+			syncing = false
+		}
+	}
+
+	const jellyfinUrl = $derived(data.jellyfinUrl ?? '')
 </script>
 
 <svelte:head>
@@ -326,6 +347,14 @@
 		<h1 class="text-2xl font-bold" style="color: var(--color-ink-50)">My Library</h1>
 		<div class="flex items-center gap-3">
 			<span class="text-sm" style="color: var(--color-ink-500)">{$watchlist.length} items</span>
+			{#if jellyfinUrl}
+				<Button variant="ghost" size="sm" loading={syncing} onclick={handleJellyfinSync}>
+					<svg class="size-4" viewBox="0 0 24 24" fill="#00a4dc" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+						<path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4.5l6.75 11.25H5.25L12 4.5z" />
+					</svg>
+					Sync Jellyfin
+				</Button>
+			{/if}
 			{#if $watchlist.length > 0}
 				<Button variant="ghost" size="sm" onclick={() => exportWatchlistToCSV($watchlist)}>
 					Export CSV
@@ -507,6 +536,7 @@
 			{#each filtered as item (item.mediaType + ':' + item.id)}
 				<LibraryMediaCard
 					{item}
+					{jellyfinUrl}
 					{handleClick}
 					{startHold}
 					{moveHold}
