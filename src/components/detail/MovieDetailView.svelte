@@ -6,13 +6,15 @@
 	import MovieGrid from '$components/movie/MovieGrid.svelte'
 	import PeopleGridSection from '$components/detail/PeopleGridSection.svelte'
 	import WatchlistButton from '$components/watchlist/WatchlistButton.svelte'
+	import JellyfinPlayButton from '$components/watchlist/JellyfinPlayButton.svelte'
 	import TrailerButton from '$components/movie/TrailerButton.svelte'
 	import TrailerModal from '$components/modals/TrailerModal.svelte'
-	import MoreMenu from '$components/detail/MoreMenu.svelte'
+	import ItemMoreMenu from '$components/detail/ItemMoreMenu.svelte'
 	import { createDetailHotkeys, type WatchlistButtonHandle } from '$lib/utils/detailHotkeys'
 	import { blacklist, filterBlacklisted } from '$lib/stores/blacklist'
 	import type { MovieDetail, FavoritePeopleByMedia } from '$lib/types/app'
 	import type { TMDBMedia } from '$lib/types/tmdb'
+	import UserRating from '$components/watchlist/UserRating.svelte'
 
 	interface Props {
 		movie: MovieDetail
@@ -75,13 +77,17 @@
 				{/if}
 			</div>
 
+			<!-- User Rating -->
+			<UserRating id={movie.id} mediaType="movie" />
+
 			<!-- Actions -->
 			<div class="flex items-center gap-3 flex-wrap">
 				<WatchlistButton bind:this={watchlistButton} media={movie} size="lg" />
+				<JellyfinPlayButton id={movie.id} mediaType="movie" />
 				{#if movie.trailer}
 					<TrailerButton trailer={movie.trailer} onclick={() => (showTrailer = true)} />
 				{/if}
-				<MoreMenu id={movie.id} mediaType="movie" title={movie.title} poster_path={movie.poster_path} />
+				<ItemMoreMenu id={movie.id} mediaType="movie" title={movie.title} poster_path={movie.poster_path} />
 			</div>
 
 			{#if directors.length > 0}

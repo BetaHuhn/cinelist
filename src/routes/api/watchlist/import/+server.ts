@@ -118,7 +118,7 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 			continue
 		}
 
-		const payload: Omit<WatchlistItem, 'addedAt' | 'onMediaServer' | 'watched'> = {
+		const payload: Omit<WatchlistItem, 'addedAt' | 'onMediaServer' | 'watched' | 'userRating'> = {
 			mediaType: 'movie',
 			id: movie.id,
 			title: movie.title,

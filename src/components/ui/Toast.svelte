@@ -49,13 +49,13 @@
 						z-index: {reversed.length - i};
 					"
 				>
-					<span style="color: {colors[toast.type]}; flex-shrink: 0">{icons[toast.type]}</span>
+					<span aria-hidden="true" style="color: {colors[toast.type]}; flex-shrink: 0">{icons[toast.type]}</span>
 					<span class="flex-1 truncate" style="color: var(--color-ink-100)">{toast.message}</span>
 					{#if hovered || isTop}
 						<button
 							onclick={() => removeToast(toast.id)}
 							class="opacity-50 hover:opacity-100 transition-opacity flex-shrink-0 text-base leading-none"
-							aria-label="Dismiss"
+							aria-label="Dismiss notification"
 							style="color: var(--color-ink-300)"
 						>×</button>
 					{/if}
@@ -64,3 +64,10 @@
 		</div>
 	</div>
 {/if}
+
+<!-- Visually hidden live region: announces toast messages to screen readers -->
+<div aria-live="polite" aria-atomic="true" class="sr-only">
+	{#if $toasts.length > 0}
+		{$toasts[$toasts.length - 1].message}
+	{/if}
+</div>

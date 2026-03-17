@@ -102,9 +102,17 @@
 	<meta name="description" content="Your personal movie watchlist" />
 </svelte:head>
 
+<a
+	href="#main-content"
+	class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-semibold focus:shadow-lg"
+	style="background: var(--color-amber-500); color: var(--color-surface-950)"
+>
+	Skip to main content
+</a>
+
 <div class="min-h-dvh flex flex-col">
 	<NavBar />
-	<main class="flex-1 pb-16 sm:pb-0">
+	<main id="main-content" class="flex-1 pb-16 sm:pb-0">
 		<PageTransition>
 			{@render children()}
 		</PageTransition>

@@ -35,7 +35,7 @@ function getReleaseDate(media: TMDBMedia): string {
 
 export async function addToWatchlist(media: TMDBMedia): Promise<void> {
 	const mediaType = inferMediaType(media)
-	const payload: Omit<WatchlistItem, 'addedAt' | 'onMediaServer' | 'watched'> = {
+	const payload: Omit<WatchlistItem, 'addedAt' | 'onMediaServer' | 'watched' | 'userRating'> = {
 		mediaType,
 		id: media.id,
 		title: getTitle(media),
@@ -47,7 +47,7 @@ export async function addToWatchlist(media: TMDBMedia): Promise<void> {
 	}
 
 	// Optimistic update
-	const optimistic: WatchlistItem = { ...payload, addedAt: Date.now(), onMediaServer: false, watched: false }
+	const optimistic: WatchlistItem = { ...payload, addedAt: Date.now(), onMediaServer: false, watched: false, userRating: null }
 	watchlist.update(items => [optimistic, ...items])
 
 	try {
@@ -120,4 +120,37 @@ export async function toggleWatched(id: number, mediaType: MediaType = 'movie'):
 	} catch {
 		watchlist.set(prev)
 	}
+}
+
+export async function rateItem(id: number, mediaType: MediaType, rating: number | null): Promise<void> {
+	const prev = get(watchlist)
+	// Optimistic update
+	watchlist.update(items =>
+		items.map(i =>
+			i.id === id && i.mediaType === mediaType ? { ...i, userRating: rating } : i
+		)
+	)
+
+	try {
+		const ratingParam = rating === null ? '' : `&rating=${rating}`
+		const res = await fetch(`/api/watchlist/${id}?type=${mediaType}&toggle=rating${ratingParam}`, { method: 'PATCH' })
+		if (!res.ok) throw new Error('Failed to rate')
+		const updated = (await res.json()) as WatchlistItem
+		watchlist.update(items =>
+			items.map(i => (i.id === updated.id && i.mediaType === updated.mediaType ? updated : i))
+		)
+	} catch {
+		watchlist.set(prev)
+	}
+}
+
+export async function syncWithJellyfin(): Promise<{ synced: number; onServer: number; watched: number }> {
+	const res = await fetch('/api/jellyfin/sync', { method: 'POST' })
+	if (!res.ok) {
+		const body = (await res.json().catch(() => null)) as { message?: string } | null
+		throw new Error(body?.message ?? `Sync failed (HTTP ${res.status})`)
+	}
+	const data = (await res.json()) as { synced: number; onServer: number; watched: number; items: WatchlistItem[] }
+	watchlist.set(data.items)
+	return { synced: data.synced, onServer: data.onServer, watched: data.watched }
 }
