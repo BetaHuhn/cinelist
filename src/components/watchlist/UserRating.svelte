@@ -41,7 +41,7 @@
 	<div class="flex flex-col gap-1.5">
 		<p class="text-xs font-medium" style="color: var(--color-ink-500)">Your Rating</p>
 		<div class="flex items-center gap-0.5">
-			{#each Array.from({ length: 5 }, (_, i) => i + 1) as star}
+			{#each Array.from({ length: 10 }, (_, i) => i + 1) as star}
 				<button
 					type="button"
 					onclick={() => handleRate(star)}
@@ -51,12 +51,12 @@
 					style={star <= (displayRating ?? 0)
 						? 'color: var(--color-amber-400)'
 						: 'color: var(--color-surface-600)'}
-					aria-label={`Rate ${star} out of 5`}
-					title={`Rate ${star}/5`}
+					aria-label={`Rate ${star} out of 10`}
+					title={`Rate ${star}/10`}
 				>★</button>
 			{/each}
 			{#if currentRating !== null}
-				<span class="ml-2 text-sm font-bold" style="color: var(--color-amber-400)">{currentRating}/5</span>
+				<span class="ml-2 text-sm font-bold" style="color: var(--color-amber-400)">{currentRating}/10</span>
 				<button
 					type="button"
 					onclick={clearRating}

@@ -168,8 +168,8 @@
 					// Unrated items (-1) sort to the bottom in both directions.
 					return (b.userRating ?? -1) - (a.userRating ?? -1)
 				case 'user-rating-asc':
-					// Unrated items (6) sort to the bottom; max valid rating is 5.
-					return (a.userRating ?? 6) - (b.userRating ?? 6)
+					// Unrated items (11) sort to the bottom; max valid rating is 10.
+					return (a.userRating ?? 11) - (b.userRating ?? 11)
 				case 'added-desc':
 				default:
 					return b.addedAt - a.addedAt

@@ -46,8 +46,8 @@ function topGenres(genreItems: Array<{ genre_ids: number[]; userRating?: number 
 		const item = genreItems[i]
 		if (!Array.isArray(item.genre_ids) || item.genre_ids.length === 0) continue
 		const recencyWeight = Math.exp(-i / 30)
-		// User rating scales genre weight: rated 5 → 1.5×, rated 2.5 → 1.0×, rated 0 → 0.5× (penalty for disliked genres), no rating → 1.0×
-		const ratingFactor = item.userRating != null ? 0.5 + (item.userRating / 5) : 1.0
+		// User rating scales genre weight: rated 10 → 1.5×, rated 5 → 1.0×, rated 0 → 0.5× (penalty for disliked genres), no rating → 1.0×
+		const ratingFactor = item.userRating != null ? 0.5 + (item.userRating / 10) : 1.0
 		const weight = recencyWeight * ratingFactor
 		for (const genreId of item.genre_ids) {
 			if (typeof genreId !== 'number') continue
