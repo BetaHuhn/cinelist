@@ -2,7 +2,8 @@ import { json, error } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
 import { getConfigOption } from '$lib/kv/app-config'
 import { getWatchlist, updateItem } from '$lib/kv/watchlist'
-import { findByTmdbId, validateJellyfinUrl } from '$lib/api/jellyfin'
+import { getLibraryItems, validateJellyfinUrl } from '$lib/api/jellyfin'
+import type { JellyfinItem } from '$lib/api/jellyfin'
 import type { WatchlistItem } from '$lib/types/app'
 
 export const POST: RequestHandler = async () => {
@@ -28,13 +29,37 @@ export const POST: RequestHandler = async () => {
 		return json({ synced: 0, onServer: 0, watched: 0, items: [] })
 	}
 
+	// Fetch all library items at once and build a lookup map keyed by
+	// "{jellyfinType}:{tmdbId}".  This works around the AnyProviderIdEquals
+	// query parameter being broken in Jellyfin 10.11+.
+	let libraryItems: JellyfinItem[]
+	try {
+		libraryItems = await getLibraryItems(baseUrl, apiKey, userId)
+	} catch (e) {
+		const msg = (e as Error).message
+		error(msg.includes('Could not reach') || msg.includes('authentication failed') ? 502 : 500, msg)
+	}
+
+	// Build lookup map: "{movie|series}:{tmdbId}" -> JellyfinItem
+	// Jellyfin uses "Movie" and "Series" as type strings; TMDB movie IDs and
+	// TV IDs are from separate namespaces, so the compound key avoids collisions.
+	const tmdbMap = new Map<string, JellyfinItem>()
+	for (const jellyfinItem of libraryItems) {
+		const tmdbId = jellyfinItem.ProviderIds?.Tmdb ?? jellyfinItem.ProviderIds?.tmdb
+		if (tmdbId) {
+			const type = jellyfinItem.Type.toLowerCase() // "movie" or "series"
+			tmdbMap.set(`${type}:${tmdbId}`, jellyfinItem)
+		}
+	}
+
 	let syncedCount = 0
 	let onServerCount = 0
 	let watchedCount = 0
 
-	const results = await Promise.allSettled(
+	await Promise.all(
 		items.map(async (item: WatchlistItem) => {
-			const jellyfinItem = await findByTmdbId(baseUrl, apiKey, userId, item.id, item.mediaType)
+			const jellyfinType = item.mediaType === 'movie' ? 'movie' : 'series'
+			const jellyfinItem = tmdbMap.get(`${jellyfinType}:${item.id}`) ?? null
 			if (jellyfinItem) {
 				const watched = jellyfinItem.UserData.Played
 				const jellyfinItemId = jellyfinItem.Id
@@ -48,16 +73,6 @@ export const POST: RequestHandler = async () => {
 			syncedCount++
 		})
 	)
-
-	// Surface the first connectivity/auth error if Jellyfin itself is unreachable.
-	for (const result of results) {
-		if (result.status === 'rejected') {
-			const msg: string = result.reason instanceof Error ? result.reason.message : String(result.reason)
-			if (msg.includes('Could not reach') || msg.includes('authentication failed')) {
-				error(502, msg)
-			}
-		}
-	}
 
 	const updatedItems = await getWatchlist()
 	return json({ synced: syncedCount, onServer: onServerCount, watched: watchedCount, items: updatedItems })
