@@ -82,8 +82,8 @@
 
 			<!-- Actions -->
 			<div class="flex items-center gap-3 flex-wrap">
-				<JellyfinPlayButton id={movie.id} mediaType="movie" />
 				<WatchlistButton bind:this={watchlistButton} media={movie} size="lg" />
+				<JellyfinPlayButton id={movie.id} mediaType="movie" />
 				{#if movie.trailer}
 					<TrailerButton trailer={movie.trailer} onclick={() => (showTrailer = true)} />
 				{/if}

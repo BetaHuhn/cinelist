@@ -12,9 +12,10 @@
 	interface Props {
 		items: MenuItem[]
 		children?: Snippet
+        className?: string
 	}
 
-	let { items, children }: Props = $props()
+	let { items, children, className }: Props = $props()
 
 	let open = $state(false)
 	let menuEl = $state<HTMLDivElement | null>(null)
@@ -44,7 +45,7 @@
 <svelte:window onkeydown={handleKeydown} onclick={handleOutsideClick} />
 
 <div class="relative" bind:this={menuEl}>
-    <Button variant="ghost" size="sm" class="py-2" onclick={(e) => { e.stopPropagation(); toggle() }}>
+    <Button variant="ghost" size="sm" class="py-2 {className}" onclick={(e) => { e.stopPropagation(); toggle() }}>
         {#if children}
 			{@render children()}
 		{:else}

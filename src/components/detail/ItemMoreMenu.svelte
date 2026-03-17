@@ -35,6 +35,7 @@
 </script>
 
 <MoreMenu
+	className="py-3 rounded-xl"
 	items={[
 		{
 			label: blacklisted ? 'Show again' : 'Hide permanently',
