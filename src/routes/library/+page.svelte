@@ -19,6 +19,7 @@
 	import { openDetailPreview } from '$lib/utils/preview'
 	import { exportWatchlistToCSV } from '$lib/utils/export'
 	import { page } from '$app/state'
+	import { replaceState, afterNavigate } from '$app/navigation'
   import MoreMenu from '$components/ui/MoreMenu.svelte';
   import DatabaseExport from '$components/icons/DatabaseExport.svelte';
   import DatabaseImport from '$components/icons/DatabaseImport.svelte';
@@ -38,8 +39,36 @@
 		| 'user-rating-desc'
 		| 'user-rating-asc'
 
-	let activeFilter = $state<WatchlistStatus>('ready')
-	let activeSort = $state<SortOption>('added-desc')
+	type MediaTypeFilter = 'all' | 'movie' | 'tv'
+
+	const DEFAULT_FILTER: WatchlistStatus = 'ready'
+	const DEFAULT_SORT: SortOption = 'added-desc'
+	const DEFAULT_MEDIA_TYPE: MediaTypeFilter = 'all'
+
+	const VALID_SORTS: SortOption[] = [
+		'added-desc', 'added-asc', 'title-asc', 'title-desc',
+		'rating-desc', 'rating-asc', 'year-desc', 'year-asc',
+		'user-rating-desc', 'user-rating-asc'
+	]
+
+	function parseFilter(val: string | null): WatchlistStatus {
+		if (val === 'ready' || val === 'pending' || val === 'watched' || val === 'all') return val
+		return DEFAULT_FILTER
+	}
+
+	function parseSort(val: string | null): SortOption {
+		if (val && (VALID_SORTS as string[]).includes(val)) return val as SortOption
+		return DEFAULT_SORT
+	}
+
+	function parseMediaType(val: string | null): MediaTypeFilter {
+		if (val === 'movie' || val === 'tv') return val
+		return DEFAULT_MEDIA_TYPE
+	}
+
+	let activeFilter = $state<WatchlistStatus>(parseFilter(page.url.searchParams.get('tab')))
+	let activeSort = $state<SortOption>(parseSort(page.url.searchParams.get('sort')))
+	let activeMediaType = $state<MediaTypeFilter>(parseMediaType(page.url.searchParams.get('type')))
 	let activeCardSize = $state<LibraryCardSize>('card')
 	let importing = $state(false)
 	let syncing = $state(false)
@@ -182,6 +211,27 @@
 		})
 	}
 
+	// Sync URL → state on back/forward navigation so filters are restored correctly
+	afterNavigate(({ to }) => {
+		if (!to) return
+		const params = to.url.searchParams
+		activeFilter = parseFilter(params.get('tab'))
+		activeSort = parseSort(params.get('sort'))
+		activeMediaType = parseMediaType(params.get('type'))
+	})
+
+	$effect(() => {
+		const params = new URLSearchParams()
+		if (activeFilter !== DEFAULT_FILTER) params.set('tab', activeFilter)
+		if (activeSort !== DEFAULT_SORT) params.set('sort', activeSort)
+		if (activeMediaType !== DEFAULT_MEDIA_TYPE) params.set('type', activeMediaType)
+		const search = params.toString()
+		const newUrl = `${page.url.pathname}${search ? `?${search}` : ''}`
+		if (newUrl !== `${page.url.pathname}${page.url.search}`) {
+			replaceState(newUrl, page.state)
+		}
+	})
+
 	const filtered = $derived.by(() => {
 		const sort = activeSort
 		const items = $watchlist
@@ -190,6 +240,7 @@
 		else if (activeFilter === 'pending') result = items.filter(i => !i.onMediaServer && !i.watched)
 		else if (activeFilter === 'watched') result = items.filter(i => i.watched)
 		else result = items
+		if (activeMediaType !== 'all') result = result.filter(i => i.mediaType === activeMediaType)
 		return sortItems(result, sort)
 	})
 
@@ -499,6 +550,23 @@
 		</div>
 
 		<div class="ml-auto flex items-center gap-2 self-end sm:self-auto">
+			<label
+				for="library-type"
+				class="whitespace-nowrap text-xs sm:text-sm"
+				style="color: var(--color-ink-500)"
+			>
+				Type
+			</label>
+			<select
+				id="library-type"
+				bind:value={activeMediaType}
+				class="text-xs sm:text-sm rounded-lg px-2.5 py-1.5 outline-0"
+				style="background: var(--color-surface-800); color: var(--color-ink-100); border: 1px solid var(--color-surface-700)"
+			>
+				<option value="all">All</option>
+				<option value="movie">Movies</option>
+				<option value="tv">TV Shows</option>
+			</select>
 			<label
 				for="library-sort"
 				class="whitespace-nowrap text-xs sm:text-sm"

@@ -24,6 +24,16 @@
 		class="absolute inset-0"
 		style="background: linear-gradient(to top, var(--color-surface-950) 0%, color-mix(in srgb, var(--color-surface-950) 40%, transparent) 50%, transparent 100%)"
 	></div>
+	<button
+		onclick={() => history.back()}
+		class="absolute top-4 left-4 z-10 flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+		style="color: var(--color-ink-200); background: color-mix(in srgb, var(--color-surface-900) 70%, transparent); backdrop-filter: blur(4px)"
+	>
+		<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			<path d="M19 12H5M12 5l-7 7 7 7"/>
+		</svg>
+		Back
+	</button>
 </div>
 
 <!-- Content -->
