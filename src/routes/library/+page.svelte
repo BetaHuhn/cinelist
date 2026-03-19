@@ -19,7 +19,7 @@
 	import { openDetailPreview } from '$lib/utils/preview'
 	import { exportWatchlistToCSV } from '$lib/utils/export'
 	import { page } from '$app/state'
-	import { replaceState } from '$app/navigation'
+	import { replaceState, afterNavigate } from '$app/navigation'
   import MoreMenu from '$components/ui/MoreMenu.svelte';
   import DatabaseExport from '$components/icons/DatabaseExport.svelte';
   import DatabaseImport from '$components/icons/DatabaseImport.svelte';
@@ -210,6 +210,15 @@
 			}
 		})
 	}
+
+	// Sync URL → state on back/forward navigation so filters are restored correctly
+	afterNavigate(({ to }) => {
+		if (!to) return
+		const params = to.url.searchParams
+		activeFilter = parseFilter(params.get('tab'))
+		activeSort = parseSort(params.get('sort'))
+		activeMediaType = parseMediaType(params.get('type'))
+	})
 
 	$effect(() => {
 		const params = new URLSearchParams()
