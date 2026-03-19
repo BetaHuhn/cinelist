@@ -18,17 +18,11 @@
 
 	onMount(async () => {
 		try {
-			const [urlRes, nameRes] = await Promise.all([
-				fetch('/api/config/customProviderUrl'),
-				fetch('/api/config/customProviderName')
-			])
-			if (urlRes.ok) {
-				const body = (await urlRes.json()) as { value?: string }
-				customProviderUrl = body.value ?? ''
-			}
-			if (nameRes.ok) {
-				const body = (await nameRes.json()) as { value?: string }
-				customProviderName = body.value ?? ''
+			const res = await fetch('/api/config/custom-provider')
+			if (res.ok) {
+				const body = (await res.json()) as { url?: string; name?: string }
+				customProviderUrl = body.url ?? ''
+				customProviderName = body.name ?? ''
 			}
 		} catch {}
 	})
