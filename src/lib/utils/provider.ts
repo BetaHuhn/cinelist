@@ -12,10 +12,12 @@ export function buildProviderUrl(template: string, title: string, releaseDate: s
 
 	const kebab = title
 		.toLowerCase()
+		.replace(/['\u2018\u2019\u201B]/g, '')
 		.replace(/[^a-z0-9]+/g, '-')
 		.replace(/^-+|-+$/g, '')
 
 	const camel = title
+		.replace(/['\u2018\u2019\u201B]/g, '')
 		.replace(/[^a-zA-Z0-9]+(.)/g, (_, char: string) => char.toUpperCase())
 		.replace(/^[A-Z]/, c => c.toLowerCase())
 		.replace(/[^a-zA-Z0-9]/g, '')
