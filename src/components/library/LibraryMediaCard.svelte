@@ -107,13 +107,10 @@
 							e.stopPropagation()
 							window.open(jellyfinPlayUrl, '_blank', 'noopener,noreferrer')
 						}}
-						class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full transition-all duration-150 ease-spring active:scale-95"
-						style="background: rgba(0,164,220,0.15); color: #00a4dc"
+						class="inline-flex items-center gap-1.5 text-xs font-medium px-1 py-1 rounded-full transition-all duration-150 ease-spring active:scale-95"
+						style="background: #000B25;"
 					>
-						<svg class="size-3" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-							<path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4.5l6.75 11.25H5.25L12 4.5z" />
-						</svg>
-						Play
+						<img src="/icons/jellyfin.svg" alt="" class="size-4" />
 					</button>
 				{/if}
 				<WatchlistButton media={media} size="sm" hideDropdown hideTooltip hideLabel minimal />

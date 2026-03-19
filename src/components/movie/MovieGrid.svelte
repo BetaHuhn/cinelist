@@ -9,9 +9,11 @@
 		loading?: boolean
 		skeletonCount?: number
 		favoritePeopleByMedia?: FavoritePeopleByMedia
+		jellyfinUrl?: string
+		hideStateIndicators?: boolean
 	}
 
-	let { movies = [], loading = false, skeletonCount = 12, favoritePeopleByMedia }: Props = $props()
+	let { movies = [], loading = false, skeletonCount = 12, favoritePeopleByMedia, jellyfinUrl, hideStateIndicators = false }: Props = $props()
 
 	function mediaKey(movie: TMDBMedia): string {
 		const mt = 'media_type' in movie ? movie.media_type : ('title' in movie ? 'movie' : 'tv')
@@ -26,7 +28,7 @@
 		{/each}
 	{:else}
 		{#each movies as movie, i ((('media_type' in movie ? movie.media_type : ('title' in movie ? 'movie' : 'tv')) + ':' + movie.id))}
-			<MovieCard {movie} index={i} favoritePeople={favoritePeopleByMedia?.[mediaKey(movie)]} />
+			<MovieCard {movie} index={i} favoritePeople={favoritePeopleByMedia?.[mediaKey(movie)]} {jellyfinUrl} hideState={hideStateIndicators} />
 		{/each}
 	{/if}
 </div>

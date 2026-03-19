@@ -66,7 +66,7 @@
 		: 'watchlist'
 	)
 
-	const iconOnlySizes = { sm: 'size-4 text-xs p-1', md: 'size-8 text-sm', lg: 'size-12 text-lg' }
+	const iconOnlySizes = { sm: 'size-4 text-xs p-1', md: 'size-6 text-sm', lg: 'size-12 text-lg' }
 	const labelSizes = { sm: 'text-xs px-2 py-1 gap-1', md: 'text-sm px-4 py-2.5 gap-1', lg: 'text-base px-4 py-2 gap-2' }
 
 	// Colors: none → neutral, watchlist → amber, ready/watched → green

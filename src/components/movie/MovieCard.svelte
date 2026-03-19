@@ -8,14 +8,17 @@
 	import WatchlistButton from '$components/watchlist/WatchlistButton.svelte'
 	import { openDetailPreview } from '$lib/utils/preview'
 	import { openContextMenu } from '$lib/stores/contextMenu'
+  	import { buildJellyfinPlayUrl } from '$lib/utils/jellyfin';
 
 	interface Props {
 		movie: TMDBMedia
 		index?: number
 		favoritePeople?: { id: number; name: string }[]
+		jellyfinUrl?: string
+		hideState?: boolean
 	}
 
-	let { movie, index = 0, favoritePeople }: Props = $props()
+	let { movie, index = 0, favoritePeople, jellyfinUrl, hideState = false }: Props = $props()
 	let imageLoaded = $state(false)
 
 	const mediaType = $derived.by((): 'movie' | 'tv' => {
@@ -38,6 +41,12 @@
 	let startY = $state(0)
 	let suppressClick = $state(false)
 	let suppressNavOnce = $state(false)
+
+	const jellyfinPlayUrl = $derived(
+		jellyfinUrl && item?.jellyfinItemId
+			? buildJellyfinPlayUrl(jellyfinUrl, item.jellyfinItemId)
+			: null
+	)
 
 	function fromPath(): string {
 		return (page.state as App.PageState | undefined)?.preview?.from
@@ -190,9 +199,29 @@
 		{/if}
 
 		<!-- Unified state button: always visible -->
-		<div class="absolute top-2 right-2">
-			<WatchlistButton media={movie} size="md" hideDropdown hideTooltip hideLabel />
-		</div>
+		{#if !hideState}
+			<div class="absolute top-2 right-2">
+				<WatchlistButton media={movie} size="md" hideDropdown hideTooltip hideLabel />
+			</div>
+		{/if}
+
+		{#if jellyfinPlayUrl && hideState}
+			<button
+				type="button"
+				data-no-preview
+				aria-label="Play in Jellyfin"
+				onclick={(e) => {
+					e.preventDefault()
+					e.stopPropagation()
+					window.open(jellyfinPlayUrl, '_blank', 'noopener,noreferrer')
+				}}
+				class="opacity-0 group-hover:opacity-100 inline-flex group/jelly-btn absolute top-2 right-2 items-center gap-1.5 text-xs font-medium p-1.5 rounded-full transition-all duration-150 ease-spring active:scale-95 hover:scale-105"
+				style="background: #000B25;"
+			>
+				<img src="/icons/jellyfin.svg" alt="" class="size-4 transition-opacity ease-in-out duration-150 opacity-75 group-hover/jelly-btn:opacity-100" />
+				<!-- Watch -->
+			</button>
+		{/if}
 	</div>
 
 	<div class="p-3 flex flex-col gap-1 flex-1">

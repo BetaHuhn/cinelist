@@ -617,7 +617,7 @@
 	{:else if activeCardSize === 'graph'}
 		<GraphView items={filtered} onNodeClick={(item) => openPreview(item.mediaType, item.id)} />
 	{:else if activeCardSize === 'poster'}
-		<MovieGrid movies={filteredAsMedia} />
+		<MovieGrid movies={filteredAsMedia} hideStateIndicators={activeFilter === 'ready'} {jellyfinUrl} />
 	{:else if activeCardSize === 'card'}
 		<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 			{#each filtered as item (item.mediaType + ':' + item.id)}
