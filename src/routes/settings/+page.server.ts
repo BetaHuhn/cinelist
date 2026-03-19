@@ -2,13 +2,14 @@ import { getConfigOption } from '$lib/kv/app-config'
 import type { PageServerLoad } from './$types'
 
 export const load: PageServerLoad = async () => {
-	const [jellyfinUrl, jellyfinUserId] = await Promise.all([
+	const [jellyfinUrl, jellyfinUserId, customProviderUrl] = await Promise.all([
 		getConfigOption('jellyfinUrl'),
-		getConfigOption('jellyfinUserId')
+		getConfigOption('jellyfinUserId'),
+		getConfigOption('customProviderUrl')
 	])
 
 	// Note: jellyfinApiKey is intentionally not included in the server load to
 	// avoid it being serialized into the page HTML. The settings form lets the
 	// user enter/re-enter the key but never pre-fills it.
-	return { jellyfinUrl, jellyfinUserId }
+	return { jellyfinUrl, jellyfinUserId, customProviderUrl }
 }

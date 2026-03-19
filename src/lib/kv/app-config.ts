@@ -25,7 +25,8 @@ const normalizers: { [K in AppConfigKey]: Normalizer<K> } = {
 	libraryCardSize: normalizeLibraryCardSize,
 	jellyfinUrl: normalizeString,
 	jellyfinApiKey: normalizeString,
-	jellyfinUserId: normalizeString
+	jellyfinUserId: normalizeString,
+	customProviderUrl: normalizeString
 }
 
 export function isAppConfigKey(value: string): value is AppConfigKey {
@@ -52,6 +53,7 @@ export async function getAppConfig(): Promise<AppConfigSchema> {
 		libraryCardSize: await getConfigOption('libraryCardSize'),
 		jellyfinUrl: await getConfigOption('jellyfinUrl'),
 		jellyfinApiKey: await getConfigOption('jellyfinApiKey'),
-		jellyfinUserId: await getConfigOption('jellyfinUserId')
+		jellyfinUserId: await getConfigOption('jellyfinUserId'),
+		customProviderUrl: await getConfigOption('customProviderUrl')
 	}
 }
