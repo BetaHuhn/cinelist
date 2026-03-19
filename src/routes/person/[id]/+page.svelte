@@ -67,6 +67,17 @@
 </svelte:head>
 
 <section class="max-w-7xl mx-auto px-4 py-10" in:fade={{ duration: 200 }}>
+	<div class="mb-6">
+		<button
+			onclick={() => history.back()}
+			class="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors btn-ghost"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<path d="M19 12H5M12 5l-7 7 7 7"/>
+			</svg>
+			Back
+		</button>
+	</div>
 	<div class="flex flex-col sm:flex-row gap-6 items-start">
 		<div class="size-24 sm:size-28 rounded-2xl overflow-hidden flex-shrink-0" style="background: var(--color-surface-800)">
 			<img src={profileUrl(person.profile_path, 'w185')} alt={person.name} class="w-full h-full object-cover" />
