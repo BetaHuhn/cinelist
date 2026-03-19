@@ -7,6 +7,7 @@
 	import PeopleGridSection from '$components/detail/PeopleGridSection.svelte'
 	import WatchlistButton from '$components/watchlist/WatchlistButton.svelte'
 	import JellyfinPlayButton from '$components/watchlist/JellyfinPlayButton.svelte'
+	import GetButton from '$components/watchlist/GetButton.svelte'
 	import TrailerButton from '$components/movie/TrailerButton.svelte'
 	import TrailerModal from '$components/modals/TrailerModal.svelte'
 	import ItemMoreMenu from '$components/detail/ItemMoreMenu.svelte'
@@ -84,6 +85,7 @@
 			<div class="flex items-center gap-3 flex-wrap">
 				<WatchlistButton bind:this={watchlistButton} media={movie} size="lg" />
 				<JellyfinPlayButton id={movie.id} mediaType="movie" />
+				<GetButton id={movie.id} mediaType="movie" title={movie.title} releaseDate={movie.release_date} />
 				{#if movie.trailer}
 					<TrailerButton trailer={movie.trailer} onclick={() => (showTrailer = true)} />
 				{/if}

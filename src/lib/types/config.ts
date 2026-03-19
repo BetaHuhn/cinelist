@@ -5,11 +5,15 @@ export interface AppConfigSchema {
 	jellyfinUrl: string
 	jellyfinApiKey: string
 	jellyfinUserId: string
+	customProviderUrl: string
+	customProviderName: string
 }
 
 export const APP_CONFIG_DEFAULTS: AppConfigSchema = {
 	libraryCardSize: 'card',
 	jellyfinUrl: '',
 	jellyfinApiKey: '',
-	jellyfinUserId: ''
+	jellyfinUserId: '',
+	customProviderUrl: '',
+	customProviderName: ''
 }

@@ -13,6 +13,8 @@
 	let jellyfinUrl = $state(untrack(() => data.jellyfinUrl ?? ''))
 	let jellyfinApiKey = $state('')
 	let jellyfinUserId = $state(untrack(() => data.jellyfinUserId ?? ''))
+	let customProviderUrl = $state(untrack(() => data.customProviderUrl ?? ''))
+	let customProviderName = $state(untrack(() => data.customProviderName ?? ''))
 
 	let saving = $state(false)
 	let testing = $state(false)
@@ -38,7 +40,9 @@
 		try {
 			const updates: Array<{ key: string; value: string }> = [
 				{ key: 'jellyfinUrl', value: jellyfinUrl.trim() },
-				{ key: 'jellyfinUserId', value: jellyfinUserId.trim() }
+				{ key: 'jellyfinUserId', value: jellyfinUserId.trim() },
+				{ key: 'customProviderUrl', value: customProviderUrl.trim() },
+				{ key: 'customProviderName', value: customProviderName.trim() }
 			]
 			// Only send the API key if the user typed something in the field.
 			if (jellyfinApiKey.trim()) {
@@ -199,6 +203,76 @@
 				</Button>
 				<Button variant="ghost" onclick={testConnection} loading={testing}>
 					Test &amp; Sync
+				</Button>
+			</div>
+		</div>
+	</section>
+
+	<!-- Custom Provider -->
+	<section class="rounded-2xl p-6 mb-6" style="background: var(--color-surface-800)">
+		<div class="flex items-start gap-4 mb-6">
+			<div
+				class="size-16 rounded-xl flex items-center justify-center shrink-0"
+				style="background: color-mix(in srgb, var(--color-surface-700) 60%, transparent); border: 1px solid color-mix(in srgb, var(--color-surface-600) 50%, transparent);"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--color-ink-300)">
+					<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+					<polyline points="15 3 21 3 21 9" />
+					<line x1="10" y1="14" x2="21" y2="3" />
+				</svg>
+			</div>
+			<div>
+				<h2 class="text-lg font-semibold" style="color: var(--color-ink-50)">Custom Provider</h2>
+				<p class="text-sm mt-0.5" style="color: var(--color-ink-500)">
+					Configure a search URL for a provider to find items available to download or stream.
+					A <strong style="color: var(--color-ink-400)">Get</strong> button will appear on detail pages for items not on your media server.
+				</p>
+			</div>
+		</div>
+
+		<div class="flex flex-col gap-5">
+			<div>
+				<label for="custom-provider-name" class="block text-sm font-medium mb-1.5" style="color: var(--color-ink-200)">
+					Provider Name
+				</label>
+				<input
+					id="custom-provider-name"
+					type="text"
+					bind:value={customProviderName}
+					placeholder="e.g. Prowlarr"
+					class="w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2"
+					style="background: var(--color-surface-700); color: var(--color-ink-100); border: 1px solid var(--color-surface-600)"
+					autocomplete="off"
+				/>
+				<p class="mt-1 text-xs" style="color: var(--color-ink-500)">
+					Shown in the button label as <strong style="color: var(--color-ink-400)">Get via {customProviderName || 'Provider'}</strong>.
+				</p>
+			</div>
+
+			<div>
+				<label for="custom-provider-url" class="block text-sm font-medium mb-1.5" style="color: var(--color-ink-200)">
+					Search URL
+				</label>
+				<input
+					id="custom-provider-url"
+					type="url"
+					bind:value={customProviderUrl}
+					placeholder="https://example.com/search?q={`{NAME}`}"
+					class="w-full rounded-lg px-3 py-2 text-sm font-mono outline-none focus:ring-2"
+					style="background: var(--color-surface-700); color: var(--color-ink-100); border: 1px solid var(--color-surface-600)"
+					autocomplete="off"
+				/>
+				<p class="mt-1 text-xs" style="color: var(--color-ink-500)">
+					Use placeholders: <code style="color: var(--color-ink-400)">{'{NAME}'}</code> (title),
+					<code style="color: var(--color-ink-400)">{'{YEAR}'}</code> (release year),
+					<code style="color: var(--color-ink-400)">{'{NAME_KEBAB}'}</code> (kebab-case),
+					<code style="color: var(--color-ink-400)">{'{NAME_CAMEL}'}</code> (camelCase).
+				</p>
+			</div>
+
+			<div class="flex items-center gap-3 pt-1">
+				<Button variant="primary" onclick={saveConfig} loading={saving}>
+					Save
 				</Button>
 			</div>
 		</div>
