@@ -26,7 +26,8 @@ const normalizers: { [K in AppConfigKey]: Normalizer<K> } = {
 	jellyfinUrl: normalizeString,
 	jellyfinApiKey: normalizeString,
 	jellyfinUserId: normalizeString,
-	customProviderUrl: normalizeString
+	customProviderUrl: normalizeString,
+	customProviderName: normalizeString
 }
 
 export function isAppConfigKey(value: string): value is AppConfigKey {
@@ -54,6 +55,7 @@ export async function getAppConfig(): Promise<AppConfigSchema> {
 		jellyfinUrl: await getConfigOption('jellyfinUrl'),
 		jellyfinApiKey: await getConfigOption('jellyfinApiKey'),
 		jellyfinUserId: await getConfigOption('jellyfinUserId'),
-		customProviderUrl: await getConfigOption('customProviderUrl')
+		customProviderUrl: await getConfigOption('customProviderUrl'),
+		customProviderName: await getConfigOption('customProviderName')
 	}
 }

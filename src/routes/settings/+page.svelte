@@ -14,6 +14,7 @@
 	let jellyfinApiKey = $state('')
 	let jellyfinUserId = $state(untrack(() => data.jellyfinUserId ?? ''))
 	let customProviderUrl = $state(untrack(() => data.customProviderUrl ?? ''))
+	let customProviderName = $state(untrack(() => data.customProviderName ?? ''))
 
 	let saving = $state(false)
 	let testing = $state(false)
@@ -40,7 +41,8 @@
 			const updates: Array<{ key: string; value: string }> = [
 				{ key: 'jellyfinUrl', value: jellyfinUrl.trim() },
 				{ key: 'jellyfinUserId', value: jellyfinUserId.trim() },
-				{ key: 'customProviderUrl', value: customProviderUrl.trim() }
+				{ key: 'customProviderUrl', value: customProviderUrl.trim() },
+				{ key: 'customProviderName', value: customProviderName.trim() }
 			]
 			// Only send the API key if the user typed something in the field.
 			if (jellyfinApiKey.trim()) {
@@ -229,6 +231,24 @@
 		</div>
 
 		<div class="flex flex-col gap-5">
+			<div>
+				<label for="custom-provider-name" class="block text-sm font-medium mb-1.5" style="color: var(--color-ink-200)">
+					Provider Name
+				</label>
+				<input
+					id="custom-provider-name"
+					type="text"
+					bind:value={customProviderName}
+					placeholder="e.g. Prowlarr"
+					class="w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2"
+					style="background: var(--color-surface-700); color: var(--color-ink-100); border: 1px solid var(--color-surface-600)"
+					autocomplete="off"
+				/>
+				<p class="mt-1 text-xs" style="color: var(--color-ink-500)">
+					Shown in the button label as <strong style="color: var(--color-ink-400)">Get via {customProviderName || 'Provider'}</strong>.
+				</p>
+			</div>
+
 			<div>
 				<label for="custom-provider-url" class="block text-sm font-medium mb-1.5" style="color: var(--color-ink-200)">
 					Search URL

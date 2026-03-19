@@ -6,6 +6,7 @@ export interface AppConfigSchema {
 	jellyfinApiKey: string
 	jellyfinUserId: string
 	customProviderUrl: string
+	customProviderName: string
 }
 
 export const APP_CONFIG_DEFAULTS: AppConfigSchema = {
@@ -13,5 +14,6 @@ export const APP_CONFIG_DEFAULTS: AppConfigSchema = {
 	jellyfinUrl: '',
 	jellyfinApiKey: '',
 	jellyfinUserId: '',
-	customProviderUrl: ''
+	customProviderUrl: '',
+	customProviderName: ''
 }
