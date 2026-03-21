@@ -20,61 +20,12 @@
 
 ## Features
 
-- **Discover home**:
-	- "Trending Now" from TMDB.
-	- "Recommended for You" generated from your watchlist + favourite people.
-	- "From Your Watchlist" and "Ready in Your Library" preview rows.
-	- Featured carousel sourced from your own library items.
-- **Search**:
-	- Multi-search across movies and TV shows.
-	- Dedicated people results with direct links to person pages.
-- **Details**:
-	- Movie details load from TMDB with optional OMDb enrichment (ratings, etc.).
-	- TV details load from TMDB.
-	- Person pages include biography and curated credits.
-	- Trailer playback uses an embedded YouTube (nocookie) iframe.
-- **Library / watchlist management**:
-	- Add/remove items with optimistic UI updates.
-	- Multi-state item workflow: **Watchlist → Saved in Library → Watched**.
-	- Press & hold the watchlist button for quick state transitions.
-	- Filter tabs: **Ready to Watch / Not in Library / Watched / All**.
-	- Media-type filter: Movies, TV shows, or both.
-	- Sort by: date added, title, TMDB rating, user rating, or release year.
-	- Three display modes: **Card**, **Poster**, and **Graph** views.
-	- Favourite people list in library view.
-	- Export your watchlist to CSV.
-	- Persisted library card-size preference.
-- **User ratings**:
-	- Rate any item 1–10 stars directly from the library.
-	- Ratings feed into the personalised recommendation algorithm.
-- **Graph view**:
-	- Interactive force-directed graph of your library items.
-	- Edges connect items that share genres or TMDB keywords.
-	- Node circles display TMDB poster images with genre-colour borders.
-- **Jellyfin integration**:
-	- Connect to a Jellyfin media server from the Settings page.
-	- Syncing marks items as available and links to the Jellyfin player.
-	- A **Play** button appears on detail pages for items found on your server.
-- **Custom provider**:
-	- Configure any search URL (e.g. Prowlarr) as a custom provider.
-	- A **Get via…** button appears on detail pages for items not on your media server.
-	- Supports `{NAME}`, `{YEAR}`, `{NAME_KEBAB}`, and `{NAME_CAMEL}` placeholders.
-- **Quick preview modal**:
-	- Opens a detail preview via client-side history state.
-	- Trigger it via **Shift+Click** on desktop or a short **press & hold** on touch/pointer.
-	- Expand to the full detail route when needed.
-- **Blacklist / hidden items**:
-	- Hide titles from the Discover home and recommendation results.
-	- Manage hidden items from the Library → Hidden Items page.
-- **CSV import**:
-	- Upload a `.csv` to bulk-add movies.
-	- Rows are resolved to TMDB movies via TMDB links or a title search.
-- **Keyboard shortcuts**:
-	- `/` or `Ctrl/Cmd+K` to focus search.
-	- `g h`, `g l`, `g s` to navigate to Home, Library, and Search.
-- **PWA**:
-	- Generated service worker + manifest — installable on desktop and mobile.
-	- Caches TMDB images and API responses for faster repeat usage.
+- **Personalised recommendations** — CineList learns from your watchlist and favourite people to surface movies and shows you'll actually want to watch.
+- **Your library, your way** — Track what you want to watch, what's saved on your server, and what you've already seen. Rate anything 1–10 stars, sort and filter however you like, and switch between card, poster, or interactive graph views.
+- **Jellyfin integration** — Connect your Jellyfin media server and CineList will automatically mark what's available and link straight to the player.
+- **Discover & explore** — Browse trending titles, watch trailers, read cast & crew pages, and peek at any title in a quick preview modal without losing your place.
+- **Installable PWA** — Add it to your home screen on any device. Works offline and caches images for fast repeat visits.
+- **Import & export** — Bulk-import a watchlist from CSV and export your library any time.
 
 ## Tech Stack
 
