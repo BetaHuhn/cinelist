@@ -1,19 +1,29 @@
-# CineList
+<p align="center">
+  <img alt="CineList" src="./static/icons/icon-512.png" width="96">
+</p>
 
-A lightweight, installable (PWA) movie & TV watchlist built with SvelteKit.
+<h3 align="center">CineList</h3>
 
-- Discover trending and personalized recommendations
-- Search movies, TV shows, and people
-- Open rich detail pages for movies, TV, and people
-- Manage your library with watchlist, “saved in library”, and watched states
-- Quickly preview details in a modal without leaving the current grid/list
+<p align="center">
+  A lightweight, installable (PWA) movie &amp; TV watchlist
+</p>
+
+<p align="center">
+  <a href="#features"><strong>Features</strong></a> ·
+  <a href="#tech-stack"><strong>Tech Stack</strong></a> ·
+  <a href="#architecture"><strong>Architecture</strong></a> ·
+  <a href="#setup"><strong>Setup</strong></a> ·
+  <a href="#development"><strong>Development</strong></a>
+</p>
+
+<br/>
 
 ## Features
 
 - **Discover home**:
-	- “Trending Now” from TMDB.
-	- “Recommended for You” generated from your watchlist + favorite people.
-	- “From Your Watchlist” and “Ready in Your Library” preview rows.
+	- "Trending Now" from TMDB.
+	- "Recommended for You" generated from your watchlist + favourite people.
+	- "From Your Watchlist" and "Ready in Your Library" preview rows.
 	- Featured carousel sourced from your own library items.
 - **Search**:
 	- Multi-search across movies and TV shows.
@@ -25,15 +35,37 @@ A lightweight, installable (PWA) movie & TV watchlist built with SvelteKit.
 	- Trailer playback uses an embedded YouTube (nocookie) iframe.
 - **Library / watchlist management**:
 	- Add/remove items with optimistic UI updates.
-	- Multi-state item workflow: **Watchlist / Saved in Library / Watched**.
+	- Multi-state item workflow: **Watchlist → Saved in Library → Watched**.
 	- Press & hold the watchlist button for quick state transitions.
 	- Filter tabs: **Ready to Watch / Not in Library / Watched / All**.
-	- Favorite people list in library view.
+	- Media-type filter: Movies, TV shows, or both.
+	- Sort by: date added, title, TMDB rating, user rating, or release year.
+	- Three display modes: **Card**, **Poster**, and **Graph** views.
+	- Favourite people list in library view.
+	- Export your watchlist to CSV.
 	- Persisted library card-size preference.
+- **User ratings**:
+	- Rate any item 1–10 stars directly from the library.
+	- Ratings feed into the personalised recommendation algorithm.
+- **Graph view**:
+	- Interactive force-directed graph of your library items.
+	- Edges connect items that share genres or TMDB keywords.
+	- Node circles display TMDB poster images with genre-colour borders.
+- **Jellyfin integration**:
+	- Connect to a Jellyfin media server from the Settings page.
+	- Syncing marks items as available and links to the Jellyfin player.
+	- A **Play** button appears on detail pages for items found on your server.
+- **Custom provider**:
+	- Configure any search URL (e.g. Prowlarr) as a custom provider.
+	- A **Get via…** button appears on detail pages for items not on your media server.
+	- Supports `{NAME}`, `{YEAR}`, `{NAME_KEBAB}`, and `{NAME_CAMEL}` placeholders.
 - **Quick preview modal**:
 	- Opens a detail preview via client-side history state.
 	- Trigger it via **Shift+Click** on desktop or a short **press & hold** on touch/pointer.
 	- Expand to the full detail route when needed.
+- **Blacklist / hidden items**:
+	- Hide titles from the Discover home and recommendation results.
+	- Manage hidden items from the Library → Hidden Items page.
 - **CSV import**:
 	- Upload a `.csv` to bulk-add movies.
 	- Rows are resolved to TMDB movies via TMDB links or a title search.
@@ -41,64 +73,77 @@ A lightweight, installable (PWA) movie & TV watchlist built with SvelteKit.
 	- `/` or `Ctrl/Cmd+K` to focus search.
 	- `g h`, `g l`, `g s` to navigate to Home, Library, and Search.
 - **PWA**:
-	- Generated service worker + manifest.
+	- Generated service worker + manifest — installable on desktop and mobile.
 	- Caches TMDB images and API responses for faster repeat usage.
 
 ## Tech Stack
 
-- Svelte 5 + SvelteKit 2 (TypeScript)
-- Vite
-- Tailwind CSS
-- `vite-plugin-pwa`
-- Deno runtime for production (`svelte-adapter-deno`)
-- Persistence via `unstorage` (default: Deno KV)
+- **Svelte 5 + SvelteKit 2** (TypeScript)
+- **Tailwind CSS v4** via `@tailwindcss/postcss`
+- **Vite** + `vite-plugin-pwa`
+- **Deno** runtime for production (`svelte-adapter-deno`)
+- **unstorage** for persistence (default: Deno KV at `./.data/cinelist.kv`)
+- **d3-force** for the graph view
 
 ## Architecture
 
 ### Routing & data fetching
 
-- Pages are standard SvelteKit routes:
-	- `/` discover (trending, featured, recommendations, library previews)
-	- `/search` results for movies/TV + people
-	- `/library` watchlist/library management + import
-	- `/movie/[id]` and `/tv/[id]` detail pages
-	- `/person/[id]` person details + credits
+Pages are standard SvelteKit routes:
 
-- TMDB calls live in `src/lib/api/tmdb.ts`.
-- OMDb lookup (optional) lives in `src/lib/api/omdb.ts`.
+| Route | Description |
+|---|---|
+| `/` | Discover — trending, featured, recommendations, library previews |
+| `/search` | Search results for movies, TV shows, and people |
+| `/library` | Library management, import, and export |
+| `/library/blacklist` | Manage hidden (blacklisted) items |
+| `/movie/[id]` | Movie detail page |
+| `/tv/[id]` | TV show detail page |
+| `/person/[id]` | Person page — biography and credits |
+| `/settings` | Jellyfin integration and custom provider settings |
 
-### Watchlist persistence
+All TMDB and OMDb calls are server-side only (`src/lib/api/`). API keys are never exposed to the client.
 
-- Server-side persistence is implemented as SvelteKit API endpoints:
-	- `GET /api/watchlist`
-	- `POST /api/watchlist`
-	- `DELETE /api/watchlist/[id]?type=movie|tv`
-	- `PATCH /api/watchlist/[id]?type=movie|tv&toggle=server|watched`
-	- `POST /api/watchlist/import` (CSV import)
-	- `GET /api/featured?limit=8`
-	- `GET /api/recommendations?limit=24`
-	- `GET /api/people`
-	- `POST /api/people`
-	- `DELETE /api/people/[id]`
-	- `GET /api/config/[key]`
-	- `PUT /api/config/[key]`
+### API endpoints
 
-- Storage is configured in `storage.config.ts` via `unstorage`.
-	- Default backend: **Deno KV**, stored at `./.data/cinelist.kv`.
-	- You can swap drivers (filesystem, memory, redis, …) in that file.
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/watchlist` | Fetch full watchlist |
+| `POST` | `/api/watchlist` | Add an item |
+| `DELETE` | `/api/watchlist/[id]` | Remove an item (`?type=movie\|tv`) |
+| `PATCH` | `/api/watchlist/[id]` | Toggle state (`?toggle=server\|watched\|rating`) |
+| `POST` | `/api/watchlist/import` | CSV bulk import |
+| `GET` | `/api/featured` | Featured items for the carousel |
+| `GET` | `/api/recommendations` | Personalised recommendations |
+| `GET` | `/api/people` | Favourite people list |
+| `POST` | `/api/people` | Add a favourite person |
+| `DELETE` | `/api/people/[id]` | Remove a favourite person |
+| `GET` | `/api/blacklist` | Hidden items list |
+| `POST` | `/api/blacklist` | Hide an item |
+| `DELETE` | `/api/blacklist/[id]` | Un-hide an item |
+| `GET` | `/api/graph/keywords` | Keyword edges for the graph view |
+| `POST` | `/api/jellyfin/sync` | Sync availability from Jellyfin |
+| `GET` | `/api/config/[key]` | Read a config value |
+| `PUT` | `/api/config/[key]` | Write a config value |
+
+### Storage
+
+- Configured in `storage.config.ts` via `unstorage`.
+- Default backend: **Deno KV**, stored at `./.data/cinelist.kv`.
+- You can swap drivers (filesystem, memory, redis, …) in that file.
 
 ### Client state
 
 - The watchlist is mirrored in a Svelte store (`src/lib/stores/watchlist.ts`) and kept in sync via the API.
-- Favorite people are mirrored in `src/lib/stores/people.ts`.
+- Favourite people are mirrored in `src/lib/stores/people.ts`.
 - Recommendation responses are cached server-side and invalidated on watchlist/people changes.
 
 ## Setup
 
 ### Requirements
 
-- Node.js (for dev tooling and bundling)
-- Deno (for running the production build and the default Deno KV storage backend)
+- **Node.js** — for dev tooling and bundling
+- **Deno** — for running the production build and the default Deno KV storage backend
 
 ### Install
 
@@ -108,42 +153,44 @@ npm install
 
 ### Environment variables
 
-Create a `.env` file (used by Vite/SvelteKit during development builds):
+Create a `.env` file at the project root:
 
 ```env
-# Required
-PUBLIC_TMDB_API_KEY=YOUR_TMDB_API_KEY
+# Required — TMDB API key (server-side only, never exposed to the client)
+TMDB_API_KEY=your_tmdb_api_key_here
 
-# Optional (enables extra movie metadata enrichment)
-PUBLIC_OMDB_API_KEY=YOUR_OMDB_KEY
+# Optional — OMDb API key for enriched ratings (Rotten Tomatoes, Metacritic)
+OMDB_API_KEY=your_omdb_api_key_here
+
+# Optional — comma-separated list of allowed origins for mutating API requests
+# Leave unset to bypass CSRF checks (e.g. during local development)
+CSRF_ALLOWED_ORIGINS=""
 ```
 
-Notes:
-
-- These are **public** SvelteKit env vars (prefixed with `PUBLIC_`).
-- When running the built Deno server, you must also provide these env vars to the process.
+> **Note:** `TMDB_API_KEY` and `OMDB_API_KEY` are **private** server-side variables accessed via `$env/dynamic/private`. They are never included in the client bundle.
 
 ## Development
 
 This project targets **Deno** as the production runtime (via `svelte-adapter-deno`).
 
-- **Frontend/dev server** (fast iteration):
+Start the dev server:
 
 ```sh
-deno run dev
+npm run dev
+# or
+deno task dev
 ```
 
-If you want watchlist/library persistence during development, ensure your storage backend is compatible with the runtime running your server routes.
-By default the project uses **Deno KV** (see `storage.config.ts`), which is intended for the Deno runtime.
-
-Alternative for Node-based dev: switch the storage driver in `storage.config.ts` to a Node-friendly backend (e.g. filesystem) while developing.
+> **Tip:** The default storage backend is **Deno KV** (`storage.config.ts`), which requires the Deno runtime. For a Node-based dev workflow, switch the driver in `storage.config.ts` to a Node-friendly backend (e.g. filesystem).
 
 ## Build & Run (Deno)
 
 Build a production bundle:
 
 ```sh
-deno run build
+npm run build
+# or
+deno task build
 ```
 
 Run the generated Deno server:
@@ -152,17 +199,21 @@ Run the generated Deno server:
 deno run -A --unstable-kv build/index.js
 ```
 
-Common runtime env vars for the server:
-
-- `HOST` (default `0.0.0.0`)
-- `PORT` (default `3000`)
-- `CSRF_ALLOWED_ORIGINS` (optional comma-separated allowlist of origins and/or hosts for mutating `/api/*` requests; when unset, CSRF origin checks are bypassed)
-
-If you keep secrets in a local `.env`, you may prefer Deno’s env-file support:
+To load environment variables from a local `.env` file:
 
 ```sh
 deno run -A --unstable-kv --env-file=.env build/index.js
 ```
+
+Common runtime environment variables:
+
+| Variable | Default | Description |
+|---|---|---|
+| `TMDB_API_KEY` | — | **Required.** TMDB v3 API key |
+| `OMDB_API_KEY` | — | Optional. Enables OMDb rating enrichment |
+| `HOST` | `0.0.0.0` | Bind address |
+| `PORT` | `3000` | Bind port |
+| `CSRF_ALLOWED_ORIGINS` | — | Comma-separated origin allowlist for mutating API requests |
 
 ## Build & Run (Docker)
 
@@ -176,36 +227,38 @@ Run the container on port `8000`:
 
 ```sh
 docker run --rm -p 8000:8000 \
-	-e PUBLIC_TMDB_API_KEY=YOUR_TMDB_API_KEY \
-	-e PUBLIC_OMDB_API_KEY=YOUR_OMDB_KEY \
+	-e TMDB_API_KEY=your_tmdb_api_key_here \
+	-e OMDB_API_KEY=your_omdb_api_key_here \
 	cinelist
 ```
 
 ## CSV Import
 
-The Watchlist import accepts a `.csv` with either:
+The watchlist importer accepts a `.csv` with either:
 
 - a header row containing columns like `type`, `title`, `originalTitle`, `year`, `link`, or
 - a simple positional format.
 
-If a row contains a TMDB movie link, it will be used directly; otherwise the importer searches TMDB by title (and year when present).
-
-Notes:
+If a row contains a TMDB movie link it is used directly; otherwise the importer searches TMDB by title (and year when present).
 
 - The importer is movie-focused: non-movie rows are skipped.
-- For the best results, include a `link` to the TMDB movie page or provide `title` + `year`.
+- For best results include a `link` to the TMDB movie page or provide `title` + `year`.
 
 ## Scripts
 
-- `npm run dev` – start dev server
-- `npm run build` – build production bundle
-- `npm run preview` – preview the production build (tooling preview)
-- `npm run check` – typecheck with Svelte
-- `npm run check:watch` – typecheck in watch mode
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the Vite dev server |
+| `npm run build` | Build the production bundle |
+| `npm run preview` | Preview the production build locally |
+| `npm run check` | Type-check with `svelte-check` |
+| `npm run check:watch` | Type-check in watch mode |
 
 Deno task equivalents (see `deno.json`):
 
-- `deno task dev` – runs `deno task check` then starts the dev server
-- `deno task build` – build production bundle
-- `deno task preview` – preview build
-- `deno task check` – typecheck with Svelte
+| Command | Description |
+|---|---|
+| `deno task dev` | Type-check then start the dev server |
+| `deno task build` | Build the production bundle |
+| `deno task preview` | Preview the production build |
+| `deno task check` | Type-check with `svelte-check` |
