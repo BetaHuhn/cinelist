@@ -29,6 +29,8 @@
 
 ## Tech Stack
 
+> Note: this project has been built with the use of AI tools like Claude Code and GitHub Copilot/Agents. 
+
 - **Svelte 5 + SvelteKit 2** (TypeScript)
 - **Tailwind CSS v4** via `@tailwindcss/postcss`
 - **Vite** + `vite-plugin-pwa`
