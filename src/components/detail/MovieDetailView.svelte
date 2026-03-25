@@ -51,7 +51,7 @@
 			.filter(c => c.job === 'Producer' || c.job === 'Executive Producer')
 			.filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i)
 	)
-	const relatedItems = $derived(filterBlacklisted(related.filter(m => m.id !== movie.id), () => 'movie', $blacklist).slice(0, 12))
+	const relatedItems = $derived(filterBlacklisted(related.filter(m => m.id !== movie.id), () => 'movie', $blacklist).slice(0, 18))
 </script>
 
 <svelte:window onkeydown={hotkeys.handleKeydown} onkeyup={hotkeys.handleKeyup} onblur={hotkeys.handleWindowBlur} />

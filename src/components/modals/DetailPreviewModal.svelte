@@ -6,12 +6,15 @@
 	import Spinner from '$components/ui/Spinner.svelte'
 	import MovieDetailView from '$components/detail/MovieDetailView.svelte'
 	import TVDetailView from '$components/detail/TVDetailView.svelte'
-	import type { MovieDetail, TVDetail } from '$lib/types/app'
+	import type { MovieDetail, TVDetail, FavoritePeopleByMedia } from '$lib/types/app'
+	import type { TMDBMedia } from '$lib/types/tmdb'
 
 	let loading = $state(false)
 	let errorMessage = $state<string | null>(null)
 	let movie = $state<MovieDetail | null>(null)
 	let tv = $state<TVDetail | null>(null)
+	let related = $state<TMDBMedia[]>([])
+	let favoritePeopleByMedia = $state<FavoritePeopleByMedia>({})
 	let lastKey: string | null = null
 
 	const preview = $derived((page.state as App.PageState | undefined)?.preview ?? null)
@@ -54,6 +57,8 @@
 			errorMessage = null
 			movie = null
 			tv = null
+			related = []
+			favoritePeopleByMedia = {}
 			lastKey = null
 			return
 		}
@@ -66,6 +71,8 @@
 		errorMessage = null
 		movie = null
 		tv = null
+		related = []
+		favoritePeopleByMedia = {}
 
 		const ac = new AbortController()
 
@@ -76,7 +83,9 @@
 				: `/api/detail/tv/${preview.id}`
 			const res = await fetch(endpoint, { signal: ac.signal })
 			if (!res.ok) throw new Error(`Failed to load details (${res.status})`)
-			const data = await res.json() as { movie?: MovieDetail; tv?: TVDetail }
+			const data = await res.json() as { movie?: MovieDetail; tv?: TVDetail; related?: TMDBMedia[]; favoritePeopleByMedia?: FavoritePeopleByMedia }
+			related = data.related ?? []
+			favoritePeopleByMedia = data.favoritePeopleByMedia ?? {}
 			if (preview.mediaType === 'movie') {
 				movie = data.movie ?? null
 			} else {
@@ -137,9 +146,9 @@
 						{/if}
 					</div>
 				{:else if movie}
-					<MovieDetailView {movie} />
+					<MovieDetailView {movie} {related} {favoritePeopleByMedia} />
 				{:else if tv}
-					<TVDetailView {tv} />
+					<TVDetailView {tv} {related} {favoritePeopleByMedia} />
 				{/if}
 			</div>
 
