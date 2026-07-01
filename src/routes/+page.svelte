@@ -84,8 +84,39 @@
 		<p class="text-lg max-w-md mx-auto" style="color: var(--color-ink-300)">
 			Discover trending movies and series, track what to watch, and know what's ready in your own library.
 		</p>
-		<div class="max-w-md mx-auto w-full">
-			<SearchBar placeholder="Search for movies, TV & people…" />
+		<div class=" mx-auto flex w-full flex-col gap-3">
+			<div class="max-w-md mx-auto w-full">
+				<SearchBar placeholder="Search for movies, TV & people…" />
+			</div>
+			
+			<div class="flex flex-col sm:flex-row gap-2 justify-center">
+				<a href="#trending" class="inline-flex items-center justify-center rounded-full border border-surface-600/80 bg-surface-900/60 px-4 py-2.5 text-sm font-semibold transition-transform duration-150 hover:scale-[1.01] hover:bg-surface-800/80" style="color: var(--color-ink-100)">
+					<!-- Trending icon -->
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.294 -2.333 5.588c0 3.704 3.134 6.706 7 6.706c3.866 0 7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235" /></svg>
+
+					Trending
+				</a>
+
+				<a href="#recommended" class="inline-flex items-center justify-center rounded-full border border-surface-600/80 bg-surface-900/60 px-4 py-2.5 text-sm font-semibold transition-transform duration-150 hover:scale-[1.01] hover:bg-surface-800/80" style="color: var(--color-ink-100)">
+					<!-- Recommended icon -->
+					 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M21 12c-6.597 0 -9 2.403 -9 9c0 -6.597 -2.403 -9 -9 -9c6.597 0 9 -2.403 9 -9c0 6.597 2.403 9 9 9" /></svg>
+
+					Recommended
+				</a>
+
+				<a href="/mood" class="inline-flex items-center justify-center rounded-full border border-surface-600/80 bg-surface-900/60 px-4 py-2.5 text-sm font-semibold transition-transform duration-150 hover:scale-[1.01] hover:bg-surface-800/80" style="color: var(--color-ink-100)">
+					<!-- Mood icon -->
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 10l.01 0" /><path d="M15 10l.01 0" /><path d="M9.5 15a3.5 3.5 0 0 0 5 0" /></svg>
+					Pick a Mood
+				</a>
+
+				<a href="/library" class="inline-flex items-center justify-center rounded-full border border-surface-600/80 bg-surface-900/60 px-4 py-2.5 text-sm font-semibold transition-transform duration-150 hover:scale-[1.01] hover:bg-surface-800/80" style="color: var(--color-ink-100)">
+					<!-- Library icon -->
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2 text-[#4ade80]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 5a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -14" /><path d="M9 5a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -14" /><path d="M5 8h4" /><path d="M9 16h4" /><path d="M13.803 4.56l2.184 -.53c.562 -.135 1.133 .19 1.282 .732l3.695 13.418a1.02 1.02 0 0 1 -.634 1.219l-.133 .041l-2.184 .53c-.562 .135 -1.133 -.19 -1.282 -.732l-3.695 -13.418a1.02 1.02 0 0 1 .634 -1.219l.133 -.041" /><path d="M14 9l4 -1" /><path d="M16 16l3.923 -.98" /></svg>
+
+					My Library
+				</a>
+			</div>
 		</div>
 	</div>
 </section>
@@ -100,7 +131,7 @@
 	<!-- Personalized Recommendations Section -->
 	<section class="max-w-7xl mx-auto px-4 py-10">
 		<div class="mb-6">
-			<h2 class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Recommended for You</h2>
+			<h2 id="recommended" class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Recommended for You</h2>
 			<p class="text-sm mb-4" style="color: var(--color-ink-300)">Based on your watchlist and ratings</p>
 		</div>
 		<MovieGrid movies={recommended} favoritePeopleByMedia={data.favoritePeopleByMedia} />
@@ -110,7 +141,7 @@
 <!-- Trending Section -->
 <section class="max-w-7xl mx-auto px-4 py-10">
 	<div class="mb-6">
-		<h2 class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Trending Now</h2>
+		<h2 id="trending" class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Trending Now</h2>
 		<p class="text-sm mb-4" style="color: var(--color-ink-300)">What's popular this week</p>
 	</div>
 	<MovieGrid movies={trending} favoritePeopleByMedia={data.favoritePeopleByMedia} />
@@ -120,7 +151,7 @@
 	<!-- Newly Released Section -->
 	<section class="max-w-7xl mx-auto px-4 py-10">
 		<div class="mb-6">
-			<h2 class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Newly Released</h2>
+			<h2 id="newly-released" class="text-xl font-bold mb-2" style="color: var(--color-ink-50)">Newly Released</h2>
 			<p class="text-sm mb-4" style="color: var(--color-ink-300)">Recent releases from the past 3 months</p>
 		</div>
 		<MovieGrid movies={newlyReleased} favoritePeopleByMedia={data.favoritePeopleByMedia} />
@@ -130,7 +161,7 @@
 {#if watchlistPreview.length > 0}
 	<!-- Watchlist Preview Section -->
 	<section class="max-w-7xl mx-auto px-4 py-10">
-		<h2 class="text-xl font-bold mb-6" style="color: var(--color-ink-50)">From Your Watchlist</h2>
+		<h2 id="watchlist" class="text-xl font-bold mb-6" style="color: var(--color-ink-50)">From Your Watchlist</h2>
 		<MovieGrid movies={watchlistPreview} />
 	</section>
 {/if}
@@ -138,7 +169,7 @@
 {#if libraryPreview.length > 0}
 	<!-- Library Preview Section -->
 	<section class="max-w-7xl mx-auto px-4 py-10">
-		<h2 class="text-xl font-bold mb-6" style="color: var(--color-ink-50)">Ready in Your Library</h2>
+		<h2 id="library" class="text-xl font-bold mb-6" style="color: var(--color-ink-50)">Ready in Your Library</h2>
 		<MovieGrid movies={libraryPreview} />
 	</section>
 {/if}
