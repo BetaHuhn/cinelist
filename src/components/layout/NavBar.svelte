@@ -7,7 +7,7 @@
 
 	const navLinks = [
 		{ href: '/', label: 'Discover' },
-		{ href: '/recommended', label: 'Pick a Mood' },
+		{ href: '/mood', label: 'Pick a Mood' },
 		{ href: '/library', label: 'Library' },
 		{ href: '/settings', label: 'Settings' }
 	]
