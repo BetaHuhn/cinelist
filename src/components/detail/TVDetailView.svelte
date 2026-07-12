@@ -55,7 +55,7 @@
 	)
 	const runtime = $derived(tv.episode_run_time?.[0] ?? null)
 	const seasons = $derived((tv.seasons ?? []).filter(s => s.season_number !== 0))
-	const relatedItems = $derived(filterBlacklisted(related.filter(m => m.id !== tv.id), () => 'tv', $blacklist).slice(0, 12))
+	const relatedItems = $derived(filterBlacklisted(related.filter(m => m.id !== tv.id), () => 'tv', $blacklist).slice(0, 18))
 </script>
 
 <svelte:window onkeydown={hotkeys.handleKeydown} onkeyup={hotkeys.handleKeyup} onblur={hotkeys.handleWindowBlur} />
