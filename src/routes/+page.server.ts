@@ -10,7 +10,7 @@ function isoDate(date: Date): string {
 }
 
 export const load: PageServerLoad = async ({ fetch }) => {
-	const trendingPromise = fetchTrending(fetch)
+	const trendingPromise = fetchTrending(fetch).catch(() => [])
 	const featuredPromise = (async (): Promise<FeaturedItem[]> => {
 		try {
 			const res = await fetch('/api/featured?limit=8')

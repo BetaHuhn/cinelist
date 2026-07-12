@@ -21,6 +21,26 @@ import type {
 } from '$lib/types/tmdb'
 
 const BASE = 'https://api.themoviedb.org/3'
+const EXTERNAL_FETCH_TIMEOUT_MS = 12_000
+
+async function fetchWithTimeout(
+	fetchFn: typeof fetch,
+	url: string,
+	init: RequestInit = {},
+	timeoutMs = EXTERNAL_FETCH_TIMEOUT_MS
+): Promise<Response> {
+	const controller = new AbortController()
+	const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+	try {
+		return await fetchFn(url, {
+			...init,
+			signal: controller.signal
+		})
+	} finally {
+		clearTimeout(timeoutId)
+	}
+}
 
 function getApiKey(): string {
 	const key = env.TMDB_API_KEY
@@ -38,7 +58,7 @@ async function tmdbFetch<T>(
 	for (const [k, v] of Object.entries(params)) {
 		url.searchParams.set(k, v)
 	}
-	const res = await fetchFn(url.toString(), {
+	const res = await fetchWithTimeout(fetchFn, url.toString(), {
 		headers: {
 			'Authorization': `Bearer ${getApiKey()}`,
 		}

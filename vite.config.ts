@@ -34,8 +34,13 @@ export default defineConfig({
 				]
 			},
 			workbox: {
+				clientsClaim: true,
+				cleanupOutdatedCaches: true,
+				skipWaiting: true,
+				navigateFallback: '/offline.html',
+				navigateFallbackDenylist: [/^\/api\//, /^\/_app\//, /^\/icons\//, /^\/robots\.txt$/, /^\/manifest\.webmanifest$/, /^\/offline\.html$/],
 				// Ensure the SW can serve SvelteKit's output
-				globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+				globPatterns: ['**/*.{js,css,html,svg,woff2}'],
 				runtimeCaching: [
 					{
 						urlPattern: /^https:\/\/image\.tmdb\.org\/.*/i,
