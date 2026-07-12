@@ -37,8 +37,6 @@ export default defineConfig({
 				clientsClaim: true,
 				cleanupOutdatedCaches: true,
 				skipWaiting: true,
-				navigateFallback: '/offline.html',
-				navigateFallbackDenylist: [/^\/api\//, /^\/_app\//, /^\/icons\//, /^\/robots\.txt$/, /^\/manifest\.webmanifest$/, /^\/offline\.html$/],
 				// Ensure the SW can serve SvelteKit's output
 				globPatterns: ['**/*.{js,css,html,svg,woff2}'],
 				runtimeCaching: [
