@@ -1,0 +1,21 @@
+name: Trigger Cinelist Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/github-script@v6
+              with:
+                github-token: ${{ secrets.GH_PAT }}
+                script: |
+                    await github.rest.actions.createWorkflowDispatch({
+                        owner: 'betahuhn',
+                        repo: 'nas-deployments',
+                        workflow_id: 'deploy-cinelist.yml',
+                        ref: 'main'
+                    })
