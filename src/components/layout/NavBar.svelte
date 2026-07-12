@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { page } from '$app/state'
+	import { innerWidth } from 'svelte/reactivity/window';
+
 	import { watchlist } from '$lib/stores/watchlist'
 	import SearchBar from '$components/search/SearchBar.svelte'
 	import NavigationTrail from '$components/layout/NavigationTrail.svelte'
 
 	const navLinks = [
 		{ href: '/', label: 'Discover' },
-		{ href: '/mood', label: 'Pick a Mood' },
+		{ href: '/mood', label: 'Mood' },
 		{ href: '/library', label: 'Library' },
 		{ href: '/settings', label: 'Settings' }
 	]
@@ -15,6 +17,12 @@
 	const currentPath = $derived(page.url.pathname)
 
 	let isBrandCollapsed = $state(false)
+
+	$effect(() => {
+		if (innerWidth.current && innerWidth.current < 640) {
+			isBrandCollapsed = true
+		}
+	})
 
 	onMount(() => {
 		const updateBrandState = () => {
@@ -61,7 +69,7 @@
 			{#each navLinks as link (link.href)}
 				<a
 					href={link.href}
-					class="relative px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
+					class="relative px-1 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors"
 					style={currentPath === link.href
 						? 'color: var(--color-ink-50); background: var(--color-surface-700)'
 						: 'color: var(--color-ink-500)'}
